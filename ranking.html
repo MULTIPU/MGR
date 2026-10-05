@@ -1,0 +1,3200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MGR Multiverse Awards - Competitor Level Rankings</title>
+<style>
+  :root{
+    --bg1:#0a0a16; --bg2:#141428; --gold:#dfb25c; --gold-light:#f5d696;
+    --panel:#12121f; --panel-line:rgba(255,255,255,.08); --text:#e9e6f0; --muted:#a9a5b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(ellipse at 50% -10%, #1c1c3a 0%, var(--bg1) 60%);
+    color:var(--text);
+  }
+  header{
+    text-align:center; padding:26px 16px 14px; border-bottom:1px solid var(--panel-line);
+  }
+  header h1{
+    margin:0; font-size:1.35rem; letter-spacing:.5px; color:var(--gold-light);
+    text-shadow:0 0 18px rgba(223,178,92,.35);
+  }
+  header p{margin:8px 0 0; color:var(--muted); font-size:.85rem;}
+
+  .wrap{max-width:900px; margin:0 auto; padding:18px 14px 60px;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;
+  }
+  .tier-break{
+    grid-column:1 / -1; height:1px; background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin:6px 0; opacity:.5;
+  }
+  .badge-cell{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:6px 2px 8px; cursor:pointer; transition:transform .15s, border-color .15s;
+  }
+  .badge-cell:active{transform:scale(.95);}
+  .badge-cell:hover{border-color:var(--gold);}
+  .badge-cell svg{width:100%; max-width:64px; aspect-ratio:1/1;}
+  .badge-cell .lvl-num{font-size:.68rem; color:var(--muted); margin-top:2px; font-weight:600;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(4,4,10,.82); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    width:100%; max-width:420px; background:linear-gradient(180deg,#171728,#0f0f1c);
+    border:1px solid var(--gold); border-radius:16px; padding:22px 20px 24px; position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+    max-height:88vh; overflow-y:auto;
+    transition:box-shadow .25s ease;
+  }
+  .modal-nav-row{
+    display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px;
+  }
+  .nav-arrow{
+    background:rgba(223,178,92,.08); border:1px solid rgba(223,178,92,.4); color:var(--gold-light);
+    width:38px; height:38px; border-radius:50%; font-size:1.4rem; line-height:1; cursor:pointer;
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s, transform .1s;
+  }
+  .nav-arrow:active{transform:scale(.92);}
+  .nav-arrow:disabled{opacity:.25; cursor:default;}
+  .nav-arrow:not(:disabled):hover{background:rgba(223,178,92,.18);}
+  .modal-close{
+    position:absolute; top:10px; right:12px; background:none; border:none; color:var(--muted);
+    font-size:1.4rem; cursor:pointer; line-height:1;
+  }
+  .modal-badge{width:120px; margin:0 auto 10px; display:block;}
+  .modal-card h2{margin:0 0 2px; text-align:center; color:var(--gold-light); font-size:1.15rem;}
+  .modal-level-tag{
+    text-align:center; color:var(--muted); font-size:.8rem; margin-bottom:14px; letter-spacing:.5px;
+  }
+  .stat-row{
+    display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--panel-line);
+    font-size:.88rem;
+  }
+  .stat-row .k{color:var(--muted);}
+  .stat-row .v{font-weight:700; color:var(--text);}
+  .motiv-line{
+    text-align:center; font-size:1.05rem; font-weight:700; color:var(--gold-light); margin:16px 0 10px;
+    text-shadow:0 0 12px rgba(223,178,92,.25);
+  }
+  .importance{
+    font-size:.85rem; color:var(--muted); line-height:1.5; margin-top:6px;
+  }
+  .placeholder-note{
+    font-size:.7rem; color:#8d7a4a; margin-top:14px; border-top:1px dashed var(--panel-line); padding-top:10px;
+  }
+  .meaning-tag{
+    text-align:center; font-size:.72rem; letter-spacing:1.5px; text-transform:uppercase;
+    color:#8f8aa8; margin-top:-6px; margin-bottom:10px;
+  }
+
+  /* ---------- per-tier animations (portable: pure CSS, no JS timers) ---------- */
+  /* Tier 0 (1-10): breathing */
+  @keyframes anim-breathe{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+  .t-breathe{ animation:anim-breathe 4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 1 (11-20): steady rotation, once every 2s */
+  @keyframes anim-rotate-cw{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .t-rotate-cw{ animation:anim-rotate-cw 2s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 2 (21-30): pulsing glow */
+  @keyframes anim-pulse-glow{ 0%,100%{filter:drop-shadow(0 0 2px currentColor) brightness(1);} 50%{filter:drop-shadow(0 0 7px currentColor) brightness(1.3);} }
+  .t-pulse-glow{ animation:anim-pulse-glow 2.6s ease-in-out infinite; }
+
+  /* Tier 3 (31-40): shimmer sweep - handled via SMIL inside the SVG itself */
+
+  /* Tier 4 (41-49): sway, like a pendulum */
+  @keyframes anim-sway{ 0%,100%{transform:rotate(-9deg);} 50%{transform:rotate(9deg);} }
+  .t-sway{ animation:anim-sway 2.8s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 5 (50-59): twinkle - Diamond Dawn */
+  @keyframes anim-twinkle{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.6);} }
+  .t-twinkle{ animation:anim-twinkle 1.4s ease-in-out infinite; }
+
+  /* Tier 6 (60-69): counter-rotation, opposite direction/speed to tier 1 */
+  @keyframes anim-rotate-ccw{ from{transform:rotate(0deg);} to{transform:rotate(-360deg);} }
+  .t-rotate-ccw{ animation:anim-rotate-ccw 3.4s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 7 (70-79): ember pulse - glow + scale together */
+  @keyframes anim-ember{ 0%,100%{filter:drop-shadow(0 0 3px #d43a3a) brightness(1); transform:scale(1);} 50%{filter:drop-shadow(0 0 11px #ff6b6b) brightness(1.2); transform:scale(1.05);} }
+  .t-ember{ animation:anim-ember 2.1s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 8 (80-89): slow rotation (paired with SMIL shimmer) */
+  .t-rotate-slow{ animation:anim-rotate-cw 8s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 9 (90-99): heartbeat double-pulse */
+  @keyframes anim-heartbeat{ 0%,100%{transform:scale(1);} 14%{transform:scale(1.12);} 28%{transform:scale(1);} 42%{transform:scale(1.08);} 65%{transform:scale(1);} }
+  .t-heartbeat{ animation:anim-heartbeat 1.7s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Apex (Level 100): rotate + breathe (nested groups) + gold glow */
+  @keyframes anim-glow-gold{ 0%,100%{filter:drop-shadow(0 0 4px #ffdd7a);} 50%{filter:drop-shadow(0 0 16px #ffe9a8);} }
+  .t-glow-gold{ animation:anim-glow-gold 2.4s ease-in-out infinite; }
+
+
+  /* ---------- Student Ranking (Official School Leadership Badge Collection) ---------- */
+  .tab-row{
+    display:flex; justify-content:center; gap:10px; padding:14px 14px 0; flex-wrap:wrap;
+  }
+  .tab-btn{
+    background:var(--panel); border:1px solid var(--panel-line); color:var(--muted);
+    font-size:.82rem; font-weight:700; letter-spacing:.4px; padding:9px 18px; border-radius:999px;
+    cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+  }
+  .tab-btn.active{
+    color:var(--gold-light); border-color:var(--gold); background:rgba(223,178,92,.1);
+    box-shadow:0 0 14px rgba(223,178,92,.22);
+  }
+  .tab-btn:hover{border-color:var(--gold);}
+
+  .student-group-title{
+    grid-column:1/-1; text-align:center; margin:18px 0 4px; padding-top:10px;
+    border-top:1px solid var(--panel-line);
+  }
+  .student-group-title:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .student-group-title h3{
+    margin:0 0 2px; font-size:.86rem; color:var(--gold-light); letter-spacing:.4px;
+  }
+  .student-group-title span{font-size:.68rem; color:var(--muted); letter-spacing:.5px;}
+
+  .student-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px 10px;
+  }
+  @media(max-width:420px){ .student-grid{grid-template-columns:repeat(3, 1fr);} }
+
+  .student-badge-cell{
+    display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;
+    background:none; border:none; padding:0;
+  }
+  /* The one and only interaction effect for student badges: zoom + glow. */
+  .student-badge-circle{
+    width:100%; aspect-ratio:1/1; max-width:78px; border-radius:50%; overflow:hidden;
+    border:2px solid rgba(223,178,92,.55);
+    box-shadow:0 4px 14px rgba(0,0,0,.5);
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .student-badge-circle img{ width:100%; height:100%; object-fit:contain; display:block; padding:5px; border-radius:50%; }
+  .student-badge-cell:hover .student-badge-circle,
+  .student-badge-cell:active .student-badge-circle,
+  .student-badge-cell:focus-visible .student-badge-circle{
+    transform:scale(1.14);
+    box-shadow:0 0 22px var(--sglow, rgba(223,178,92,.65)), 0 6px 16px rgba(0,0,0,.55);
+    border-color:var(--sglow, var(--gold));
+  }
+  .student-badge-cell .s-name{
+    font-size:.62rem; text-align:center; line-height:1.25; color:var(--muted); max-width:92px;
+  }
+  .student-badge-cell .s-scope-tag{
+    font-size:.56rem; letter-spacing:.4px; color:#8f8aa8; text-transform:uppercase;
+  }
+
+  #studentModalOverlay .modal-badge-circle{
+    width:130px; height:130px; margin:0 auto 10px; border-radius:50%; overflow:hidden;
+    border:3px solid var(--gold); box-shadow:0 0 28px rgba(223,178,92,.35);
+  }
+  #studentModalOverlay .modal-badge-circle img{width:100%; height:100%; object-fit:cover; display:block;}
+  #studentModalOverlay .s-note{
+    font-size:.72rem; color:#8d7a4a; margin-top:12px; border-top:1px dashed var(--panel-line); padding-top:10px;
+  }
+
+
+  /* V32: role-specific emoji figures; no cropped artwork. */
+  .student-badge-circle{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0!important;border-radius:50%;}
+  .student-badge-circle img{width:100%!important;height:100%!important;object-fit:contain!important;padding:0!important;border-radius:50%;display:block;}
+  .student-badge-cell{min-height:150px;padding:10px 6px!important;gap:6px;}
+  .student-badge-cell .s-name{line-height:1.2;min-height:2.4em;display:flex;align-items:center;justify-content:center;text-align:center;}
+  @media(max-width:600px){.student-badge-cell{min-height:132px;padding:8px 4px!important}.student-badge-cell .s-name{font-size:.7rem}}
+</style>
+<style id="mrg-v28-embedded-tone">
+html,body{background:radial-gradient(ellipse at 50% -10%,#20163a 0%,#090b16 62%)!important;color:#f5f1e8!important}
+header{background:linear-gradient(180deg,rgba(18,13,35,.96),rgba(10,10,22,.96));border-bottom-color:rgba(216,180,95,.22)!important}
+header h1{color:#f3d58b!important;text-shadow:0 0 18px rgba(216,180,95,.32)!important}
+.tab-row{border-bottom-color:rgba(216,180,95,.18)!important}
+.tab-btn.active{background:#7b4bc5!important;border-color:#d8b45f!important}
+.badge-cell:hover{border-color:#f3d98c!important}
+.modal-card{border-color:rgba(216,180,95,.28)!important}
+
+  /* MGR V33 badge identity + medal stamp treatment */
+  .student-badge-circle{background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.12),rgba(0,0,0,.12) 55%,rgba(0,0,0,.4));border-width:2px;}
+  .student-badge-circle img{padding:0;object-fit:contain;}
+  .student-badge-cell{min-height:170px;gap:9px;}
+  .student-badge-cell .s-name{font-weight:800;}
+  .medal-card .medal-icon{transform-origin:50% 10%;animation:mrgMedalStamp 3.2s ease-in-out infinite;box-shadow:0 5px 12px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.16) inset;}
+  .medal-card:nth-child(2) .medal-icon{animation-delay:.22s}.medal-card:nth-child(3) .medal-icon{animation-delay:.44s}.medal-card:nth-child(4) .medal-icon{animation-delay:.66s}.medal-card:nth-child(5) .medal-icon{animation-delay:.88s}
+  .medal-hero img{animation:mrgMedalStampHero 4.4s ease-in-out infinite;transform-origin:50% 20%;}
+  @keyframes mrgMedalStamp{0%,62%,100%{transform:rotate(0) translateY(0) scale(1)}65%{transform:rotate(-7deg) translateY(-2px) scale(1.04)}68%{transform:rotate(7deg) translateY(1px) scale(.98)}71%{transform:rotate(-4deg) translateY(0) scale(1.02)}74%{transform:rotate(2deg) scale(1)} }
+  @keyframes mrgMedalStampHero{0%,70%,100%{transform:rotate(0) scale(1)}73%{transform:rotate(-1.8deg) scale(1.012)}76%{transform:rotate(1.8deg) scale(.994)}79%{transform:rotate(-.8deg) scale(1.006)}82%{transform:rotate(0) scale(1)}}
+  @media (prefers-reduced-motion:reduce){.medal-card .medal-icon,.medal-hero img{animation:none!important}}
+    .royal-selection-note{margin:0 0 13px;padding:10px 12px;border:1px solid rgba(216,180,95,.28);border-radius:14px;background:linear-gradient(135deg,rgba(216,180,95,.11),rgba(124,75,197,.08));color:var(--muted);font-size:.68rem;line-height:1.5}.royal-selection-note strong{color:#f3d98c;letter-spacing:.3px}
+/* MGR Medal section - third section */
+  .medal-panel{padding:6px 0 24px;}
+  .medal-hero{background:linear-gradient(145deg,rgba(216,180,95,.12),rgba(124,75,197,.10));border:1px solid rgba(216,180,95,.24);border-radius:18px;padding:12px;margin-bottom:14px;}
+  .medal-hero img{width:100%;max-height:190px;object-fit:contain;border-radius:14px;display:block;background:#050711;}
+  .medal-hero p{margin:8px 0 0;color:var(--muted);font-size:.72rem;text-align:center;line-height:1.45;}
+  .medal-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+  .medal-card{border:1px solid rgba(216,180,95,.18);border-radius:16px;background:rgba(255,255,255,.035);padding:11px 8px;text-align:center;min-width:0;}
+  .medal-card .medal-icon{width:74px;height:74px;margin:0 auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;border:2px solid rgba(216,180,95,.35);box-shadow:0 8px 22px rgba(0,0,0,.25);}
+  .medal-card h3{font-size:.78rem;margin:0 0 3px;color:#fff;}
+  .medal-card p{font-size:.61rem;line-height:1.35;color:var(--muted);margin:0;}
+  .medal-gold{background:linear-gradient(145deg,#fff3a3,#eab308,#7a4a08);color:#321f00;}
+  .medal-silver{background:linear-gradient(145deg,#fff,#cbd5e1,#64748b);color:#1e293b;}
+  .medal-brass{background:linear-gradient(145deg,#fde68a,#ca8a04,#713f12);color:#3b2500;}
+  .medal-copper{background:linear-gradient(145deg,#fed7aa,#c66a3d,#7c2d12);color:#35150a;}
+  .medal-bronze{background:linear-gradient(145deg,#d6a15b,#8b5a2b,#451a03);color:#fff0d0;}
+  .medal-rule{margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(216,180,95,.06);border:1px solid rgba(216,180,95,.13);font-size:.64rem;color:var(--muted);line-height:1.5;}
+  @media(max-width:760px){.medal-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.medal-hero img{max-height:145px;}}
+  @media(max-width:420px){.medal-grid{grid-template-columns:1fr;}.medal-card{display:grid;grid-template-columns:72px 1fr;gap:8px;text-align:left;align-items:center}.medal-card .medal-icon{margin:0;width:64px;height:64px}.medal-card h3{font-size:.75rem}}
+
+
+/* MGR V34 — Record Maker / Record Breaker recognition */
+/* V35 visual polish — metallic medal shine */
+.medal-card{position:relative;cursor:pointer;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.medal-card::after{content:"";position:absolute;top:-40%;left:-75%;width:38%;height:180%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.08),rgba(255,255,255,.82),rgba(255,255,255,.12),transparent);transform:skewX(-18deg);animation:medalShine 3.8s ease-in-out infinite;pointer-events:none}.medal-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.3),0 0 20px rgba(255,215,0,.14);border-color:rgba(255,215,0,.55)}@keyframes medalShine{0%,58%{left:-75%;opacity:0}65%{opacity:1}82%,100%{left:145%;opacity:0}}
+.medal-card .medal-icon{position:relative;z-index:1}.medal-history-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(3,3,9,.84);backdrop-filter:blur(5px)}.medal-history-modal.open{display:flex}.medal-history-card{width:min(720px,96vw);max-height:88vh;overflow:auto;background:linear-gradient(180deg,#17172a,#0b0b14);border:1px solid #d8b45f;border-radius:20px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.6)}.medal-history-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}.medal-history-head h3{margin:0;color:#f3d98c}.medal-history-close{border:1px solid rgba(216,180,95,.35);background:transparent;color:#f2eee2;border-radius:50%;width:34px;height:34px;cursor:pointer}.history-filter{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.history-filter select{flex:1;min-width:150px;background:#0b0c17;color:#f5f1e8;border:1px solid rgba(216,180,95,.28);border-radius:10px;padding:9px}.history-list{display:grid;gap:8px}.history-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px;border:1px solid rgba(216,180,95,.14);border-radius:12px;background:rgba(255,255,255,.03)}.history-row strong{color:#fff}.history-meta{color:#9f9aaa;font-size:.62rem}.history-badge{font-size:.58rem;font-weight:900;border-radius:999px;padding:4px 7px;align-self:start}.history-badge.gold{background:#d8b45f;color:#1b1203}.history-badge.rb{background:#00ff66;color:#052e16}.history-badge.rm{background:#ff1e27;color:#450a0a}.history-empty{padding:18px;text-align:center;color:#9f9aaa;border:1px dashed rgba(216,180,95,.2);border-radius:12px}.record-season{background:#0b0c17;color:#f5f1e8;border:1px solid rgba(216,180,95,.28);border-radius:10px;padding:9px 8px;font:inherit;font-size:.68rem;min-width:0}
+.record-section{margin-top:16px;padding:14px;border:1px solid rgba(216,180,95,.2);border-radius:18px;background:linear-gradient(145deg,rgba(216,180,95,.08),rgba(28,20,50,.22));}
+.record-section h3{margin:0;text-align:center;color:#f3d98c;font-size:.95rem;letter-spacing:.5px}.record-section .record-lead{margin:7px auto 14px;max-width:760px;text-align:center;color:var(--muted);font-size:.68rem;line-height:1.5}
+.record-badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}.record-badge-card{border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:12px;text-align:center;background:rgba(0,0,0,.16)}
+.record-badge-art{width:min(150px,44vw);height:auto;margin:0 auto 8px;display:block;filter:drop-shadow(0 7px 12px rgba(0,0,0,.42));}.record-badge-card h4{margin:0 0 4px;font-size:.82rem;color:#fff}.record-badge-card p{margin:0;color:var(--muted);font-size:.62rem;line-height:1.45}
+.record-engine{border-top:1px dashed rgba(216,180,95,.18);padding-top:13px}.record-engine h4{margin:0 0 8px;text-align:center;color:#f3d98c;font-size:.78rem}.record-form{display:grid;grid-template-columns:1.35fr 1fr .8fr .9fr .8fr auto;gap:7px;align-items:center}.record-history-button{border:1px solid #d8b45f;border-radius:10px;padding:9px 10px;background:linear-gradient(135deg,#8b5b12,#d8b45f);color:#140e03;font-weight:900;font-size:.67rem;cursor:pointer}.record-form input,.record-form select{width:100%;min-width:0;background:#0b0c17;color:#f5f1e8;border:1px solid rgba(216,180,95,.28);border-radius:10px;padding:9px 8px;font:inherit;font-size:.68rem;outline:none}.record-form input:focus,.record-form select:focus{border-color:#d8b45f;box-shadow:0 0 0 2px rgba(216,180,95,.12)}.record-form button{border:1px solid #d8b45f;border-radius:10px;padding:9px 10px;background:linear-gradient(135deg,#8b5b12,#d8b45f);color:#140e03;font-weight:900;font-size:.67rem;cursor:pointer;white-space:nowrap}.record-form button:active{transform:scale(.97)}
+.record-lower-toggle{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.64rem;margin:8px 0}.record-lower-toggle input{accent-color:#d8b45f}.record-result{margin-top:10px;min-height:42px;padding:9px 10px;border-radius:11px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.07);font-size:.66rem;line-height:1.45;color:var(--muted)}.record-result strong{color:#f3d98c}.record-status{display:inline-flex;align-items:center;gap:5px;margin-right:5px;padding:3px 7px;border-radius:999px;font-size:.58rem;font-weight:900;letter-spacing:.4px}.record-status.rb{color:#052e16;background:#00ff66}.record-status.rm{color:#450a0a;background:#ff1e27}.record-status.none{color:#d8d4c8;background:#34313b}
+.record-log{margin-top:8px;max-height:150px;overflow:auto;font-size:.6rem;color:#9f9aaa}.record-log div{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+@keyframes recordStampRB{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-5deg) scale(1.035)}50%{transform:rotate(5deg) scale(.985)}75%{transform:rotate(-2deg) scale(1.01)}}
+@keyframes recordStampRM{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(4deg) scale(1.035)}50%{transform:rotate(-4deg) scale(.985)}75%{transform:rotate(1.5deg) scale(1.01)}}
+.record-badge-card.rb-card .record-badge-art{animation:recordStampRB 3.6s ease-in-out infinite}.record-badge-card.rm-card .record-badge-art{animation:recordStampRM 3.9s ease-in-out infinite .35s}
+@media(max-width:760px){.record-form{grid-template-columns:1fr 1fr}.record-form button{grid-column:1/-1}.record-badge-grid{grid-template-columns:1fr}}
+@media(max-width:420px){.record-section{padding:10px}.record-form{grid-template-columns:1fr}.record-form button{grid-column:auto}.record-badge-art{width:125px}}
+@media(prefers-reduced-motion:reduce){.record-badge-card .record-badge-art{animation:none!important}}
+.record-lock{width:min(150px,44vw);height:auto;margin:0 auto 8px;filter:drop-shadow(0 7px 12px rgba(0,0,0,.42));display:block}
+.record-lock svg{width:100%;height:auto;display:block}
+.record-cloud-status{display:flex;align-items:center;justify-content:center;gap:7px;margin:-5px auto 12px;color:#9f9aaa;font-size:.61rem;min-height:20px}
+.cloud-dot{width:7px;height:7px;border-radius:50%;background:#9f9aaa;box-shadow:0 0 0 3px rgba(159,154,170,.08);flex:0 0 auto}.record-cloud-status.online .cloud-dot{background:#43e58c;box-shadow:0 0 10px rgba(67,229,140,.6)}.record-cloud-status.offline .cloud-dot{background:#ffb24a}.record-cloud-status.error .cloud-dot{background:#ff5961}
+.record-badge-card{min-height:100%;display:flex;flex-direction:column;justify-content:flex-start}.record-badge-card p{min-height:42px}
+@media(max-width:420px){.record-lock{width:125px}.record-cloud-status{font-size:.56rem}}
+
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <h1>MGR MULTIVERSE AWARDS</h1>
+  <p id="pageSubtitle">Competitor Level Rankings  -  Staff, Student, Medal &amp; Record sections</p>
+</header>
+
+<div class="tab-row">
+  <button class="tab-btn active" id="staffTabBtn" type="button">STAFF RANKS</button>
+  <button class="tab-btn" id="studentTabBtn" type="button">STUDENT RANKS</button>
+  <button class="tab-btn" id="medalTabBtn" type="button">MEDALS</button>
+</div>
+
+<div class="wrap">
+  <div id="staffPanel">
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="studentPanel" style="display:none;">
+    <div class="royal-selection-note"><strong>Royal Selection:</strong> Emperor/Empress, Junior King/Queen and Crown Prince/Princess are selected using royal factors including beauty/presentation, family investment and wealth, parental donations, and donations or resources carried by the candidate. Academic, conduct and leadership criteria continue to apply to the non-royal leadership badges as specified.</div>
+    <div class="student-grid" id="studentGrid"></div>
+  </div>
+  <div id="medalPanel" style="display:none;">
+    <div class="medal-panel">
+      <div class="medal-hero">
+        <img src="assets/rank-img-01-3e6525e7.jpg" alt="MGR 2026 first through fifth place medals">
+        <p>Official MGR placement medals - integrated as the third section alongside Staff Ranks and Student Ranks.</p>
+      </div>
+      <div class="medal-grid">
+        <article class="medal-card" data-medal="1st Place - Gold" tabindex="0" role="button" aria-label="Open 1st Place - Gold history"><div class="medal-icon medal-gold">1ST</div><div><h3>1st Place - Gold</h3><p>Top placement medal.</p></div></article>
+        <article class="medal-card" data-medal="2nd Place - Silver" tabindex="0" role="button" aria-label="Open 2nd Place - Silver history"><div class="medal-icon medal-silver">2ND</div><div><h3>2nd Place - Silver</h3><p>Second placement medal.</p></div></article>
+        <article class="medal-card" data-medal="3rd Place - Brass" tabindex="0" role="button" aria-label="Open 3rd Place - Brass history"><div class="medal-icon medal-brass">3RD</div><div><h3>3rd Place - Brass</h3><p>Third placement medal.</p></div></article>
+        <article class="medal-card" data-medal="4th Place - Copper" tabindex="0" role="button" aria-label="Open 4th Place - Copper history"><div class="medal-icon medal-copper">4TH</div><div><h3>4th Place - Copper</h3><p>Fourth placement medal.</p></div></article>
+        <article class="medal-card" data-medal="5th Place - Bronze" tabindex="0" role="button" aria-label="Open 5th Place - Bronze history"><div class="medal-icon medal-bronze">5TH</div><div><h3>5th Place - Bronze</h3><p>Fifth placement medal.</p></div></article>
+      </div>
+      <div class="medal-history-modal" id="medalHistoryModal" role="dialog" aria-modal="true" aria-labelledby="medalHistoryTitle">
+        <div class="medal-history-card">
+          <div class="medal-history-head"><div><h3 id="medalHistoryTitle">Medal History</h3><div id="medalHistorySubtitle" class="history-meta">Latest verified winners first</div></div><button class="medal-history-close" id="medalHistoryClose" type="button" aria-label="Close">×</button></div>
+          <div class="history-filter"><select id="medalSeasonFilter" aria-label="Season"><option value="all">All seasons</option><option>2026/27</option><option>2027/28</option><option>2028/29</option></select></div>
+          <div class="history-list" id="medalHistoryList"></div>
+        </div>
+      </div>
+      <section class="record-section" aria-labelledby="recordRecognitionTitle">
+        <h3 id="recordRecognitionTitle">RECORD RECOGNITION</h3>
+        <div id="recordCloudStatus" class="record-cloud-status" role="status" aria-live="polite"><span class="cloud-dot"></span><span>Cloud records: connecting…</span></div>
+        <p class="record-lead">Record Maker (RM) and Record Breaker (RB) recognition can apply across MGR — staff, students, children, royal competitions, sports, skills, height, distance, speed, duration, donations and other measurable categories. The engine compares a new result with the established benchmark for that specific category.</p>
+        <div class="record-badge-grid">
+          <article class="record-badge-card rm-card">
+            <div class="record-badge-art record-lock closed" role="img" aria-label="Record Maker — closed padlock">
+              <svg viewBox="0 0 220 220" aria-hidden="true"><defs><radialGradient id="rmLockBg" cx="35%" cy="25%"><stop offset="0" stop-color="#ff5961"/><stop offset=".5" stop-color="#a90f20"/><stop offset="1" stop-color="#300307"/></radialGradient><linearGradient id="rmLockGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5b0"/><stop offset=".45" stop-color="#ffd700"/><stop offset="1" stop-color="#8e5d00"/></linearGradient><filter id="rmLockShadow"><feDropShadow dx="0" dy="7" stdDeviation="5" flood-opacity=".55"/></filter></defs><circle cx="110" cy="110" r="99" fill="#08070b" stroke="#ffd700" stroke-width="5"/><circle cx="110" cy="110" r="87" fill="url(#rmLockBg)" stroke="#fff1a8" stroke-width="2"/><circle cx="110" cy="110" r="75" fill="none" stroke="#ffd700" stroke-width="2" stroke-dasharray="4 7" opacity=".65"/><path d="M76 101V82c0-22 15-37 34-37s34 15 34 37v19" fill="none" stroke="url(#rmLockGold)" stroke-width="15" stroke-linecap="round"/><rect x="61" y="96" width="98" height="78" rx="13" fill="url(#rmLockGold)" stroke="#fff5b8" stroke-width="4" filter="url(#rmLockShadow)"/><circle cx="110" cy="131" r="10" fill="#4b090e"/><path d="M110 141v16" stroke="#4b090e" stroke-width="7" stroke-linecap="round"/><text x="110" y="196" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="900" fill="#fff7cf" letter-spacing="2">RECORD MAKER</text></svg>
+            </div>
+            <h4>RM — Record Maker</h4><p>Closed padlock: the benchmark has been established and secured as an official record.</p>
+          </article>
+          <article class="record-badge-card rb-card">
+            <div class="record-badge-art record-lock opened" role="img" aria-label="Record Breaker — opened padlock">
+              <svg viewBox="0 0 220 220" aria-hidden="true"><defs><radialGradient id="rbLockBg" cx="35%" cy="25%"><stop offset="0" stop-color="#63ffa5"/><stop offset=".48" stop-color="#07803d"/><stop offset="1" stop-color="#021b0e"/></radialGradient><linearGradient id="rbLockGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5b0"/><stop offset=".45" stop-color="#ffd700"/><stop offset="1" stop-color="#8e5d00"/></linearGradient><filter id="rbLockShadow"><feDropShadow dx="0" dy="7" stdDeviation="5" flood-opacity=".55"/></filter></defs><circle cx="110" cy="110" r="99" fill="#08070b" stroke="#ffd700" stroke-width="5"/><circle cx="110" cy="110" r="87" fill="url(#rbLockBg)" stroke="#d9ffd0" stroke-width="2"/><circle cx="110" cy="110" r="75" fill="none" stroke="#ffd700" stroke-width="2" stroke-dasharray="4 7" opacity=".65"/><path d="M76 101V82c0-22 15-37 34-37 13 0 25 7 31 18" fill="none" stroke="url(#rbLockGold)" stroke-width="15" stroke-linecap="round"/><path d="M141 59l25 5-13 20" fill="none" stroke="#ffd700" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><rect x="61" y="96" width="98" height="78" rx="13" fill="url(#rbLockGold)" stroke="#fff5b8" stroke-width="4" filter="url(#rbLockShadow)"/><circle cx="110" cy="131" r="10" fill="#052d18"/><path d="M110 141v16" stroke="#052d18" stroke-width="7" stroke-linecap="round"/><path d="M154 89l15-10M158 103l18-3M157 73l9-15" stroke="#e9ffd9" stroke-width="4" stroke-linecap="round"/><text x="110" y="196" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="900" fill="#eaffdf" letter-spacing="1.6">RECORD BREAKER</text></svg>
+            </div>
+            <h4>RB — Record Breaker</h4><p>Opened padlock: the previous benchmark was broken and the new result becomes the secured record.</p>
+          </article>
+        </div>
+        <div class="record-engine">
+          <h4>LIVE RECORD ENGINE — CATEGORY BENCHMARK CHECK</h4>
+          <form id="recordEngineForm" class="record-form">
+            <input id="recordCategory" required placeholder="Category e.g. 100m sprint" autocomplete="off">
+            <input id="recordCandidate" required placeholder="Candidate name" autocomplete="off">
+            <input id="recordValue" required type="number" step="any" placeholder="Result value">
+            <input id="recordUnit" placeholder="Unit e.g. seconds" autocomplete="off">
+            <button type="submit">CHECK RECORD</button>
+          </form>
+          <label class="record-lower-toggle"><input id="recordLowerBetter" type="checkbox"> Lower value is better (e.g. race time / duration)</label>
+          <div id="recordEngineResult" class="record-result" aria-live="polite">No result checked yet. The first verified entry in a category creates its initial benchmark.</div>
+          <div id="recordEngineLog" class="record-log" aria-live="polite"></div>
+        </div>
+      </section>
+      <div class="medal-rule"><strong>How it fits:</strong> Placement medals recognise competition position. Record Maker and Record Breaker recognition is separate from placement and can apply to any MGR measurable category. Attendance, Rank and Badges remain separate systems; this record engine does not invent an attendance-to-rank formula.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card" id="modalCard">
+    <button class="modal-close" id="modalClose" aria-label="Close">X</button>
+    <div class="modal-nav-row">
+      <button class="nav-arrow" id="prevBtn" aria-label="Previous rank"><</button>
+      <div id="modalBadgeWrap"></div>
+      <button class="nav-arrow" id="nextBtn" aria-label="Next rank">></button>
+    </div>
+    <h2 id="modalName"></h2>
+    <div class="meaning-tag" id="modalMeaning"></div>
+    <div class="modal-level-tag" id="modalTag"></div>
+    <div class="stat-row"><span class="k">Days to unlock</span><span class="v" id="modalDays"></span></div>
+    <div class="stat-row"><span class="k">Expectation</span><span class="v" id="modalExpect"></span></div>
+    <div class="motiv-line" id="modalMotiv"></div>
+    <div class="importance" id="modalImportance"></div>
+    <div class="placeholder-note">"Expectation" is a placeholder metric (not in the original spec) - swap in the real formula whenever it's defined.</div>
+  </div>
+</div>
+
+
+
+<div class="modal-overlay" id="studentModalOverlay">
+  <div class="modal-card" id="studentModalCard">
+    <button class="modal-close" id="studentModalClose" aria-label="Close">X</button>
+    <div class="modal-nav-row">
+      <button class="nav-arrow" id="studentPrevBtn" aria-label="Previous rank"><</button>
+      <div class="modal-badge-circle" id="studentModalBadgeWrap"></div>
+      <button class="nav-arrow" id="studentNextBtn" aria-label="Next rank">></button>
+    </div>
+    <h2 id="studentModalName"></h2>
+    <div class="meaning-tag" id="studentModalGroup"></div>
+    <div class="modal-level-tag" id="studentModalScope"></div>
+    <div class="stat-row"><span class="k">Criteria</span></div>
+    <div class="importance" id="studentModalCriteria" style="margin:-4px 0 10px;"></div>
+    <div class="stat-row"><span class="k">Steps</span></div>
+    <div class="importance" id="studentModalSteps" style="margin:-4px 0 10px;"></div>
+    <div class="stat-row"><span class="k">Purpose</span></div>
+    <div class="importance" id="studentModalPurpose" style="margin:-4px 0 10px;"></div>
+    <div class="motiv-line" id="studentModalMotiv"></div>
+    <div class="s-note" id="studentModalNote" style="display:none;"></div>
+  </div>
+</div>
+
+<script id="levels-data" type="application/json">
+[
+ {
+  "level": 1,
+  "name": "Novice",
+  "days": 30,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Begin.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 100,
+  "expectationPointsLabel": "100"
+ },
+ {
+  "level": 2,
+  "name": "Initiate",
+  "days": 60,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Rise.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 120,
+  "expectationPointsLabel": "120"
+ },
+ {
+  "level": 3,
+  "name": "Scout",
+  "days": 90,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Persist.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 145,
+  "expectationPointsLabel": "145"
+ },
+ {
+  "level": 4,
+  "name": "Sentinel",
+  "days": 120,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Grow.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 175,
+  "expectationPointsLabel": "175"
+ },
+ {
+  "level": 5,
+  "name": "Pathfinder",
+  "days": 150,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Advance.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 210,
+  "expectationPointsLabel": "210"
+ },
+ {
+  "level": 6,
+  "name": "Guardian",
+  "days": 180,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Endure.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 254,
+  "expectationPointsLabel": "254"
+ },
+ {
+  "level": 7,
+  "name": "Champion",
+  "days": 210,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Focus.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 305,
+  "expectationPointsLabel": "305"
+ },
+ {
+  "level": 8,
+  "name": "Steward",
+  "days": 240,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Push forward.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 368,
+  "expectationPointsLabel": "368"
+ },
+ {
+  "level": 9,
+  "name": "Marshal",
+  "days": 270,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Stand firm.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 443,
+  "expectationPointsLabel": "443"
+ },
+ {
+  "level": 10,
+  "name": "Officer",
+  "days": 300,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Break through.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 534,
+  "expectationPointsLabel": "534"
+ },
+ {
+  "level": 11,
+  "name": "Vanguard",
+  "days": 330,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Lead.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 643,
+  "expectationPointsLabel": "643"
+ },
+ {
+  "level": 12,
+  "name": "Preceptor",
+  "days": 360,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Command.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 774,
+  "expectationPointsLabel": "774"
+ },
+ {
+  "level": 13,
+  "name": "Enforcer",
+  "days": 390,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Inspire.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 933,
+  "expectationPointsLabel": "933"
+ },
+ {
+  "level": 14,
+  "name": "Commander",
+  "days": 420,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Elevate.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1123,
+  "expectationPointsLabel": "1.1K"
+ },
+ {
+  "level": 15,
+  "name": "Overseer",
+  "days": 450,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Shine.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1353,
+  "expectationPointsLabel": "1.4K"
+ },
+ {
+  "level": 16,
+  "name": "Director",
+  "days": 480,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Ascend.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1630,
+  "expectationPointsLabel": "1.6K"
+ },
+ {
+  "level": 17,
+  "name": "Archon",
+  "days": 510,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Transcend.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1963,
+  "expectationPointsLabel": "2K"
+ },
+ {
+  "level": 18,
+  "name": "Viceroy",
+  "days": 540,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Radiate.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 2364,
+  "expectationPointsLabel": "2.4K"
+ },
+ {
+  "level": 19,
+  "name": "High Consul",
+  "days": 570,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Conquer.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 2848,
+  "expectationPointsLabel": "2.8K"
+ },
+ {
+  "level": 20,
+  "name": "Justiciar",
+  "days": 600,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Unite.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 3430,
+  "expectationPointsLabel": "3.4K"
+ },
+ {
+  "level": 21,
+  "name": "Envoy",
+  "days": 630,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Master your craft.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 4132,
+  "expectationPointsLabel": "4.1K"
+ },
+ {
+  "level": 22,
+  "name": "Warlord",
+  "days": 660,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Own the moment.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 4977,
+  "expectationPointsLabel": "5K"
+ },
+ {
+  "level": 23,
+  "name": "Consul",
+  "days": 690,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Set the standard.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 5995,
+  "expectationPointsLabel": "6K"
+ },
+ {
+  "level": 24,
+  "name": "Ambassador",
+  "days": 720,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Become legend.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 7221,
+  "expectationPointsLabel": "7.2K"
+ },
+ {
+  "level": 25,
+  "name": "Chancellor",
+  "days": 750,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Never stop.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 8697,
+  "expectationPointsLabel": "8.7K"
+ },
+ {
+  "level": 26,
+  "name": "Master",
+  "days": 780,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Aim higher.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 10476,
+  "expectationPointsLabel": "10.5K"
+ },
+ {
+  "level": 27,
+  "name": "Grand Preceptor",
+  "days": 810,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Hold the line.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 12619,
+  "expectationPointsLabel": "12.6K"
+ },
+ {
+  "level": 28,
+  "name": "Titan",
+  "days": 840,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Forge ahead.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 15199,
+  "expectationPointsLabel": "15.2K"
+ },
+ {
+  "level": 29,
+  "name": "High Sovereign",
+  "days": 870,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Claim your rank.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 18307,
+  "expectationPointsLabel": "18.3K"
+ },
+ {
+  "level": 30,
+  "name": "Multiverse Paragon / Legend",
+  "days": 900,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Legendary.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 22051,
+  "expectationPointsLabel": "22.1K"
+ },
+ {
+  "level": 31,
+  "name": "Astral Envoy",
+  "days": 930,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Begin.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 26561,
+  "expectationPointsLabel": "26.6K"
+ },
+ {
+  "level": 32,
+  "name": "Astral Warlord",
+  "days": 960,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Rise.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 31993,
+  "expectationPointsLabel": "32K"
+ },
+ {
+  "level": 33,
+  "name": "Astral Consul",
+  "days": 990,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Persist.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 38535,
+  "expectationPointsLabel": "38.5K"
+ },
+ {
+  "level": 34,
+  "name": "Astral Ambassador",
+  "days": 1020,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Grow.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 46416,
+  "expectationPointsLabel": "46.4K"
+ },
+ {
+  "level": 35,
+  "name": "Astral Chancellor",
+  "days": 1050,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Advance.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 55908,
+  "expectationPointsLabel": "55.9K"
+ },
+ {
+  "level": 36,
+  "name": "Astral Master",
+  "days": 1080,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Endure.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 67342,
+  "expectationPointsLabel": "67.3K"
+ },
+ {
+  "level": 37,
+  "name": "Astral Preceptor",
+  "days": 1110,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Focus.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 81113,
+  "expectationPointsLabel": "81.1K"
+ },
+ {
+  "level": 38,
+  "name": "Astral Titan",
+  "days": 1140,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Push forward.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 97701,
+  "expectationPointsLabel": "97.7K"
+ },
+ {
+  "level": 39,
+  "name": "Astral Sovereign",
+  "days": 1170,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Stand firm.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 117681,
+  "expectationPointsLabel": "117.7K"
+ },
+ {
+  "level": 40,
+  "name": "Cosmic Sage",
+  "days": 1200,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Break through.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 141747,
+  "expectationPointsLabel": "141.7K"
+ },
+ {
+  "level": 41,
+  "name": "Zenith Envoy",
+  "days": 1230,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Lead.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 170735,
+  "expectationPointsLabel": "170.7K"
+ },
+ {
+  "level": 42,
+  "name": "Zenith Warlord",
+  "days": 1260,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Command.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 205651,
+  "expectationPointsLabel": "205.7K"
+ },
+ {
+  "level": 43,
+  "name": "Zenith Consul",
+  "days": 1290,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Inspire.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 247708,
+  "expectationPointsLabel": "247.7K"
+ },
+ {
+  "level": 44,
+  "name": "Zenith Ambassador",
+  "days": 1320,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Elevate.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 298365,
+  "expectationPointsLabel": "298.4K"
+ },
+ {
+  "level": 45,
+  "name": "Zenith Chancellor",
+  "days": 1350,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Shine.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 359381,
+  "expectationPointsLabel": "359.4K"
+ },
+ {
+  "level": 46,
+  "name": "Zenith Master",
+  "days": 1380,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Ascend.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 432876,
+  "expectationPointsLabel": "432.9K"
+ },
+ {
+  "level": 47,
+  "name": "Zenith Preceptor",
+  "days": 1410,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Transcend.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 521401,
+  "expectationPointsLabel": "521.4K"
+ },
+ {
+  "level": 48,
+  "name": "Zenith Titan",
+  "days": 1440,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Radiate.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 628029,
+  "expectationPointsLabel": "628K"
+ },
+ {
+  "level": 49,
+  "name": "Zenith Sovereign",
+  "days": 1470,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Conquer.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 756463,
+  "expectationPointsLabel": "756.5K"
+ },
+ {
+  "level": 50,
+  "name": "Diamond Origin",
+  "days": 1500,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Unite.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 911163,
+  "expectationPointsLabel": "911.2K"
+ },
+ {
+  "level": 51,
+  "name": "Diamond Novice",
+  "days": 1530,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Master your craft.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1097499,
+  "expectationPointsLabel": "1.1M"
+ },
+ {
+  "level": 52,
+  "name": "Diamond Initiate",
+  "days": 1560,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Own the moment.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1321941,
+  "expectationPointsLabel": "1.3M"
+ },
+ {
+  "level": 53,
+  "name": "Diamond Scout",
+  "days": 1590,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Set the standard.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1592283,
+  "expectationPointsLabel": "1.6M"
+ },
+ {
+  "level": 54,
+  "name": "Diamond Sentinel",
+  "days": 1620,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Become legend.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1917910,
+  "expectationPointsLabel": "1.9M"
+ },
+ {
+  "level": 55,
+  "name": "Diamond Pathfinder",
+  "days": 1650,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Never stop.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 2310130,
+  "expectationPointsLabel": "2.3M"
+ },
+ {
+  "level": 56,
+  "name": "Diamond Guardian",
+  "days": 1680,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Aim higher.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 2782559,
+  "expectationPointsLabel": "2.8M"
+ },
+ {
+  "level": 57,
+  "name": "Diamond Champion",
+  "days": 1710,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Hold the line.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 3351603,
+  "expectationPointsLabel": "3.4M"
+ },
+ {
+  "level": 58,
+  "name": "Diamond Steward",
+  "days": 1740,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Forge ahead.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 4037017,
+  "expectationPointsLabel": "4M"
+ },
+ {
+  "level": 59,
+  "name": "Diamond Marshal",
+  "days": 1770,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Claim your rank.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 4862602,
+  "expectationPointsLabel": "4.9M"
+ },
+ {
+  "level": 60,
+  "name": "Silver Diamond Origin",
+  "days": 1800,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Legendary.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 5857021,
+  "expectationPointsLabel": "5.9M"
+ },
+ {
+  "level": 61,
+  "name": "Silver Novice",
+  "days": 1830,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Begin.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 7054802,
+  "expectationPointsLabel": "7.1M"
+ },
+ {
+  "level": 62,
+  "name": "Silver Initiate",
+  "days": 1860,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Rise.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 8497534,
+  "expectationPointsLabel": "8.5M"
+ },
+ {
+  "level": 63,
+  "name": "Silver Scout",
+  "days": 1890,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Persist.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 10235310,
+  "expectationPointsLabel": "10.2M"
+ },
+ {
+  "level": 64,
+  "name": "Silver Sentinel",
+  "days": 1920,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Grow.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 12328467,
+  "expectationPointsLabel": "12.3M"
+ },
+ {
+  "level": 65,
+  "name": "Silver Pathfinder",
+  "days": 1950,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Advance.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 14849683,
+  "expectationPointsLabel": "14.8M"
+ },
+ {
+  "level": 66,
+  "name": "Silver Guardian",
+  "days": 1980,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Endure.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 17886495,
+  "expectationPointsLabel": "17.9M"
+ },
+ {
+  "level": 67,
+  "name": "Silver Champion",
+  "days": 2010,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Focus.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 21544347,
+  "expectationPointsLabel": "21.5M"
+ },
+ {
+  "level": 68,
+  "name": "Silver Steward",
+  "days": 2040,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Push forward.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 25950242,
+  "expectationPointsLabel": "26M"
+ },
+ {
+  "level": 69,
+  "name": "Silver Marshal",
+  "days": 2070,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Stand firm.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 31257158,
+  "expectationPointsLabel": "31.3M"
+ },
+ {
+  "level": 70,
+  "name": "Crimson Diamond Archon",
+  "days": 2100,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Break through.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 37649358,
+  "expectationPointsLabel": "37.6M"
+ },
+ {
+  "level": 71,
+  "name": "Crimson Envoy",
+  "days": 2130,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Lead.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 45348785,
+  "expectationPointsLabel": "45.3M"
+ },
+ {
+  "level": 72,
+  "name": "Crimson Warlord",
+  "days": 2160,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Command.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 54622772,
+  "expectationPointsLabel": "54.6M"
+ },
+ {
+  "level": 73,
+  "name": "Crimson Consul",
+  "days": 2190,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Inspire.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 65793322,
+  "expectationPointsLabel": "65.8M"
+ },
+ {
+  "level": 74,
+  "name": "Crimson Ambassador",
+  "days": 2220,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Elevate.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 79248290,
+  "expectationPointsLabel": "79.2M"
+ },
+ {
+  "level": 75,
+  "name": "Crimson Chancellor",
+  "days": 2250,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Shine.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 95454846,
+  "expectationPointsLabel": "95.5M"
+ },
+ {
+  "level": 76,
+  "name": "Crimson Master",
+  "days": 2280,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Ascend.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 114975700,
+  "expectationPointsLabel": "115M"
+ },
+ {
+  "level": 77,
+  "name": "Crimson Preceptor",
+  "days": 2310,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Transcend.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 138488637,
+  "expectationPointsLabel": "138.5M"
+ },
+ {
+  "level": 78,
+  "name": "Crimson Titan",
+  "days": 2340,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Radiate.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 166810054,
+  "expectationPointsLabel": "166.8M"
+ },
+ {
+  "level": 79,
+  "name": "Crimson Sovereign",
+  "days": 2370,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Conquer.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 200923300,
+  "expectationPointsLabel": "200.9M"
+ },
+ {
+  "level": 80,
+  "name": "Galactic Origin",
+  "days": 2400,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Unite.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 242012826,
+  "expectationPointsLabel": "242M"
+ },
+ {
+  "level": 81,
+  "name": "Galactic Novice",
+  "days": 2430,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Master your craft.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 291505306,
+  "expectationPointsLabel": "291.5M"
+ },
+ {
+  "level": 82,
+  "name": "Galactic Initiate",
+  "days": 2460,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Own the moment.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 351119173,
+  "expectationPointsLabel": "351.1M"
+ },
+ {
+  "level": 83,
+  "name": "Galactic Scout",
+  "days": 2490,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Set the standard.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 422924287,
+  "expectationPointsLabel": "422.9M"
+ },
+ {
+  "level": 84,
+  "name": "Galactic Sentinel",
+  "days": 2520,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Become legend.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 509413801,
+  "expectationPointsLabel": "509.4M"
+ },
+ {
+  "level": 85,
+  "name": "Galactic Pathfinder",
+  "days": 2550,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Never stop.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 613590727,
+  "expectationPointsLabel": "613.6M"
+ },
+ {
+  "level": 86,
+  "name": "Galactic Guardian",
+  "days": 2580,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Aim higher.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 739072203,
+  "expectationPointsLabel": "739.1M"
+ },
+ {
+  "level": 87,
+  "name": "Galactic Champion",
+  "days": 2610,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Hold the line.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 890215085,
+  "expectationPointsLabel": "890.2M"
+ },
+ {
+  "level": 88,
+  "name": "Galactic Steward",
+  "days": 2640,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Forge ahead.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 1072267222,
+  "expectationPointsLabel": "1.1B"
+ },
+ {
+  "level": 89,
+  "name": "Galactic Marshal",
+  "days": 2670,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Claim your rank.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 1291549665,
+  "expectationPointsLabel": "1.3B"
+ },
+ {
+  "level": 90,
+  "name": "Imperial Origin",
+  "days": 2700,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Legendary.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 1555676144,
+  "expectationPointsLabel": "1.6B"
+ },
+ {
+  "level": 91,
+  "name": "Imperial Novice",
+  "days": 2730,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Begin.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 1873817423,
+  "expectationPointsLabel": "1.9B"
+ },
+ {
+  "level": 92,
+  "name": "Imperial Initiate",
+  "days": 2760,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Rise.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 2257019720,
+  "expectationPointsLabel": "2.3B"
+ },
+ {
+  "level": 93,
+  "name": "Imperial Scout",
+  "days": 2790,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Persist.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 2718588243,
+  "expectationPointsLabel": "2.7B"
+ },
+ {
+  "level": 94,
+  "name": "Imperial Sentinel",
+  "days": 2820,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Grow.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 3274549163,
+  "expectationPointsLabel": "3.3B"
+ },
+ {
+  "level": 95,
+  "name": "Imperial Pathfinder",
+  "days": 2850,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Advance.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 3944206059,
+  "expectationPointsLabel": "3.9B"
+ },
+ {
+  "level": 96,
+  "name": "Imperial Guardian",
+  "days": 2880,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Endure.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 4750810162,
+  "expectationPointsLabel": "4.8B"
+ },
+ {
+  "level": 97,
+  "name": "Imperial Champion",
+  "days": 2910,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Focus.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 5722367659,
+  "expectationPointsLabel": "5.7B"
+ },
+ {
+  "level": 98,
+  "name": "Imperial Steward",
+  "days": 2940,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Push forward.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 6892612104,
+  "expectationPointsLabel": "6.9B"
+ },
+ {
+  "level": 99,
+  "name": "Imperial Sovereign",
+  "days": 2970,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Stand firm.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 8302175681,
+  "expectationPointsLabel": "8.3B"
+ },
+ {
+  "level": 100,
+  "name": "Absolute Sovereign / Grand Legend",
+  "days": 3000,
+  "decagons": 10,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d",
+   "#d9a52c"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": true,
+  "tier": 10,
+  "meaning": "The Absolute",
+  "motivation": "Break through.",
+  "importance": "The Absolute Sovereign apex: ten concentric decagons in full color, gold-lit, diamond blazing \u2014 the highest rank the Multiverse recognizes.",
+  "expectationPoints": 10000000000,
+  "expectationPointsLabel": "10B"
+ }
+]
+</script>
+
+<script>
+const LEVELS = JSON.parse(document.getElementById('levels-data').textContent);
+
+/* =========================================================================
+   RANK SYSTEM BEYOND LEVEL 100 - "PRESTIGE CYCLES" (baked in, not yet rendered)
+   ---------------------------------------------------------------------------
+   The 1-100 badge system (tiers, decagon colors, diamond milestone) is one
+   full "cycle". Past level 100, the same 1-100 logic repeats indefinitely,
+   but each cycle is told apart by drawing its recurring motif shape
+   side-by-side, repeated once per cycle number:
+     - Levels   1-100  = cycle 1 -> motif drawn once   (built above)
+     - Levels 101-200  = cycle 2 -> motif drawn twice,  side by side
+     - Levels 201-300  = cycle 3 -> motif drawn 3x,     side by side
+     - Levels 301-400  = cycle 4 -> motif drawn 4x, and so on forever.
+   The position-in-cycle still picks the shape/tier/decagon-count exactly as
+   levels 1-100 do below - only the repeat-count of that shape changes.
+   To extend the grid past 100, regenerate data for the desired level range
+   using cycleInfo() below, then pass entry.repeat into buildBadgeSVG() to
+   lay out that many copies of the motif side by side instead of one.
+   ========================================================================= */
+function cycleInfo(level) {
+  const cycle = Math.floor((level - 1) / 100) + 1;      // 1, 2, 3, ...
+  const positionInCycle = ((level - 1) % 100) + 1;       // 1..100, reuses all tier/shape rules above
+  const repeat = cycle;                                   // how many copies of the motif to draw side by side
+  return { cycle, positionInCycle, repeat };
+}
+
+
+// ---------- badge SVG generator ----------
+function regularPolygonPoints(cx, cy, r, sides, rotationDeg = -90) {
+  const pts = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (rotationDeg + i * 360 / sides) * Math.PI / 180;
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+function ptsToStr(pts) { return pts.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' '); }
+
+function shapeSides(shape) {
+  return { triangle:3, square:4, pentagon:5, hexagon:6, heptagon:7, octagon:8, nonagon:9, decagon:10 }[shape] || 0;
+}
+
+// ---------- color helpers (for gradient sheens on the richer modal view) ----------
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)];
+}
+function shade(hex, pct) { // pct > 0 lightens toward white, < 0 darkens toward black
+  const [r,g,b] = hexToRgb(hex);
+  const t = pct > 0 ? 255 : 0;
+  const p = Math.abs(pct);
+  const mix = (c) => Math.round(c + (t - c) * p);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+}
+
+// One entry per tier (0-10). Each maps to portable CSS classes only -
+// no JS timers - so this whole block can be lifted into any site/app as-is.
+const TIER_ANIM = {
+  0:  { group: 't-breathe' },                                   // breathing
+  1:  { group: 't-rotate-cw' },                                 // rotates every 2s
+  2:  { filter: 't-pulse-glow' },                                // pulsing glow
+  3:  { shimmer: true },                                        // shimmer sweep (SMIL)
+  4:  { group: 't-sway' },                                      // pendulum sway
+  5:  { filter: 't-twinkle' },                                  // twinkle
+  6:  { group: 't-rotate-ccw' },                                // counter-rotation
+  7:  { group: 't-ember' },                                     // ember pulse (glow+scale)
+  8:  { group: 't-rotate-slow', shimmer: true },                // slow rotate + shimmer
+  9:  { group: 't-heartbeat' },                                 // heartbeat double-pulse
+  10: { group: 't-rotate-slow', innerGroup: 't-breathe', filter: 't-glow-gold' }, // apex combo
+};
+
+function buildShimmerOverlay(cx, cy, outerR, uid) {
+  return `<clipPath id="clip-${uid}"><circle cx="${cx}" cy="${cy}" r="${outerR}"/></clipPath>
+  <g clip-path="url(#clip-${uid})">
+    <ellipse cx="${cx - outerR}" cy="${cy}" rx="7" ry="${outerR}" fill="#ffffff" opacity="0.22" transform="rotate(22 ${cx} ${cy})">
+      <animate attributeName="cx" values="${cx-outerR-14};${cx+outerR+14}" dur="2.6s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>`;
+}
+
+function buildBadgeSVG(entry, size, isModal) {
+  const cx = 50, cy = 50;
+  const outerR = 44;
+  const uid = entry.level + (isModal ? '-m' : '-g');
+  let inner = '';
+
+  if (entry.goldApex) {
+    inner += `<defs><radialGradient id="apexGlow-${uid}" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff6da" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#fff6da" stop-opacity="0"/>
+    </radialGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="46" fill="url(#apexGlow-${uid})"/>`;
+  }
+
+  // glow filter used throughout the richer modal rendering
+  if (isModal) {
+    inner += `<defs><filter id="glow-${uid}" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="1.1" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter></defs>`;
+  }
+
+  // outer gold ring: double bezel + gem-dots in modal mode, single ring in grid
+  if (isModal) {
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#dfb25c" stroke-width="2.4"/>`;
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR-3}" fill="none" stroke="#8a6a30" stroke-width="1"/>`;
+    [0,90,180,270].forEach(a => {
+      const rad = a * Math.PI / 180;
+      const gx = cx + outerR * Math.cos(rad), gy = cy + outerR * Math.sin(rad);
+      inner += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="2.1" fill="#fff3cf" stroke="#dfb25c" stroke-width="0.6"/>`;
+    });
+  } else {
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#dfb25c" stroke-width="2.6"/>`;
+  }
+
+  let r = outerR * 0.80;
+  const shrink = 0.80;
+  const n = entry.decagons;
+  for (let k = 0; k < n; k++) {
+    const w = Math.max(0.5, 2.3 - n * 0.14);
+    const pts = regularPolygonPoints(cx, cy, r, 10);
+    if (isModal) {
+      const gid = `dgrad-${uid}-${k}`;
+      inner += `<defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${shade(entry.colors[k], 0.45)}"/>
+        <stop offset="55%" stop-color="${entry.colors[k]}"/>
+        <stop offset="100%" stop-color="${shade(entry.colors[k], -0.35)}"/>
+      </linearGradient></defs>`;
+      inner += `<polygon points="${ptsToStr(pts)}" fill="${entry.colors[k]}" fill-opacity="0.07" stroke="url(#${gid})" stroke-width="${(w+0.5).toFixed(2)}" filter="url(#glow-${uid})"/>`;
+    } else {
+      inner += `<polygon points="${ptsToStr(pts)}" fill="none" stroke="${entry.colors[k]}" stroke-width="${w.toFixed(2)}"/>`;
+    }
+    r *= shrink;
+  }
+
+  if (entry.shape) {
+    const s = entry.shape;
+    const color = n > 0 ? entry.colors[n - 1] : '#dfb25c';
+    const sw = isModal ? 2.8 : 2.4;
+    const filt = isModal ? ` filter="url(#glow-${uid})"` : '';
+    const fillOpacity = isModal ? ' fill-opacity="0.12"' : ' fill="none"';
+    if (s === 'circle') {
+      inner += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+    } else if (s === 'dissected-circle') {
+      inner += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+      inner += `<line x1="${(cx-r-2.0).toFixed(2)}" y1="${cy}" x2="${(cx+r+2.0).toFixed(2)}" y2="${cy}" stroke="#05060b" stroke-width="${(sw+3.4).toFixed(2)}" stroke-linecap="round"${filt}/>`;
+      inner += `<line x1="${(cx-r).toFixed(2)}" y1="${cy}" x2="${(cx+r).toFixed(2)}" y2="${cy}" stroke="${color}" stroke-width="${(sw+1.6).toFixed(2)}" stroke-linecap="round"${filt}/>`;
+      if(isModal){ inner += `<line x1="${(cx-r+1).toFixed(2)}" y1="${cy}" x2="${(cx-1.8).toFixed(2)}" y2="${cy}" stroke="#fff4c4" stroke-width="0.9" stroke-linecap="round" opacity="0.9"/>`; inner += `<line x1="${(cx+1.8).toFixed(2)}" y1="${cy}" x2="${(cx+r-1).toFixed(2)}" y2="${cy}" stroke="#fff4c4" stroke-width="0.9" stroke-linecap="round" opacity="0.9"/>`; }
+    } else {
+      const sides = shapeSides(s);
+      const pts = regularPolygonPoints(cx, cy, r, sides);
+      inner += `<polygon points="${ptsToStr(pts)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+    }
+  }
+
+  if (entry.diamond) {
+    const dr = entry.goldApex ? 10 : 7.5;
+    if (isModal) {
+      // proper faceted diamond: 4 shaded facets + a sparkle highlight, instead of a flat kite
+      const baseCol = entry.goldApex ? '#ffe9a8' : '#bfe9ff';
+      const top = shade(baseCol, 0.35), left = shade(baseCol, 0.05), right = shade(baseCol, -0.15), bottom = shade(baseCol, -0.4);
+      const glow = entry.goldApex ? '#ffdd7a' : '#8fd6ff';
+      inner += `<g filter="url(#glow-${uid})">
+        <polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy} ${cx-dr*0.72},${cy}" fill="${top}"/>
+        <polygon points="${cx-dr*0.72},${cy} ${cx},${cy} ${cx},${cy+dr} " fill="${left}"/>
+        <polygon points="${cx},${cy} ${cx+dr*0.72},${cy} ${cx},${cy+dr}" fill="${right}"/>
+        <polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy+dr} ${cx-dr*0.72},${cy}" fill="none" stroke="${glow}" stroke-width="0.8"/>
+        <path d="M${(cx-dr*0.3).toFixed(1)},${(cy-dr*0.35).toFixed(1)} l1.6,0 M${(cx-dr*0.05).toFixed(1)},${(cy-dr*0.55).toFixed(1)} l0,1.6" stroke="#ffffff" stroke-width="0.7" opacity="0.9"/>
+      </g>`;
+    } else {
+      const dCol = entry.goldApex ? '#fff3cf' : '#bfe9ff';
+      const glowCol = entry.goldApex ? '#ffdd7a' : '#8fd6ff';
+      inner += `<polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy+dr} ${cx-dr*0.72},${cy}"
+               fill="${dCol}" stroke="${glowCol}" stroke-width="1" opacity="0.95"/>`;
+    }
+  }
+
+  // ---- per-tier animation wrapping (nested <g> so transform-based effects never conflict) ----
+  const ta = TIER_ANIM[entry.tier];
+  let content = inner;
+  if (ta.innerGroup) content = `<g class="${ta.innerGroup}">${content}</g>`;
+  const groupClasses = [];
+  if (ta.group) groupClasses.push(ta.group);
+  if (ta.filter) groupClasses.push(ta.filter);
+  if (groupClasses.length) content = `<g class="${groupClasses.join(' ')}">${content}</g>`;
+  if (ta.shimmer) content += buildShimmerOverlay(cx, cy, outerR, uid);
+
+  // ---- modal-only ornamentation: colored glow backdrop + ornamental tick ring ----
+  let pre = '', post = '';
+  if (isModal) {
+    const glowColor = n > 0 ? entry.colors[n - 1] : '#dfb25c';
+    pre = `<defs><radialGradient id="bg-${uid}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${glowColor}" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="${glowColor}" stop-opacity="0"/>
+      </radialGradient></defs>
+      <circle cx="${cx}" cy="${cy}" r="49" fill="url(#bg-${uid})"/>`;
+    const ticks = [];
+    for (let i = 0; i < 12; i++) {
+      const a = i * 30 * Math.PI / 180;
+      const x1 = cx + 46 * Math.cos(a), y1 = cy + 46 * Math.sin(a);
+      const x2 = cx + 49 * Math.cos(a), y2 = cy + 49 * Math.sin(a);
+      ticks.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#dfb25c" stroke-width="1" opacity="0.7"/>`);
+    }
+    post = ticks.join('');
+  }
+
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">${pre}${content}${post}</svg>`;
+}
+
+// ---------- render grid ----------
+const grid = document.getElementById('grid');
+LEVELS.forEach((entry, i) => {
+  if (i > 0 && i % 10 === 0) {
+    const brk = document.createElement('div');
+    brk.className = 'tier-break';
+    grid.appendChild(brk);
+  }
+  const cell = document.createElement('div');
+  cell.className = 'badge-cell';
+  cell.innerHTML = buildBadgeSVG(entry, 64, false) + `<div class="lvl-num">#${entry.level}</div>`;
+  cell.addEventListener('click', () => openModal(i));
+  grid.appendChild(cell);
+});
+
+// ---------- modal ----------
+const overlay = document.getElementById('modalOverlay');
+const modalCard = document.getElementById('modalCard');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+let currentIndex = 0;
+
+function tierGlowColor(entry) {
+  return entry.decagons > 0 ? entry.colors[entry.decagons - 1] : '#dfb25c';
+}
+
+function openModal(index) {
+  index = Math.max(0, Math.min(LEVELS.length - 1, index));
+  currentIndex = index;
+  const entry = LEVELS[index];
+
+  document.getElementById('modalBadgeWrap').innerHTML = buildBadgeSVG(entry, 120, true);
+  document.getElementById('modalBadgeWrap').firstChild && (document.getElementById('modalBadgeWrap').firstChild.className = 'modal-badge');
+  document.getElementById('modalName').textContent = entry.name;
+  document.getElementById('modalMeaning').textContent = entry.meaning;
+  document.getElementById('modalTag').textContent = `LEVEL ${entry.level} OF 100`;
+  document.getElementById('modalDays').textContent = entry.days + ' days';
+  document.getElementById('modalExpect').textContent = entry.expectationPointsLabel + ' pts';
+  document.getElementById('modalMotiv').textContent = entry.motivation;
+  document.getElementById('modalImportance').textContent = entry.importance;
+
+  const glow = tierGlowColor(entry);
+  modalCard.style.boxShadow = `0 20px 60px rgba(0,0,0,.6), 0 0 30px ${glow}55`;
+
+  prevBtn.disabled = index === 0;
+  nextBtn.disabled = index === LEVELS.length - 1;
+
+  overlay.classList.add('open');
+}
+
+function closeModal() { overlay.classList.remove('open'); }
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+prevBtn.addEventListener('click', () => openModal(currentIndex - 1));
+nextBtn.addEventListener('click', () => openModal(currentIndex + 1));
+
+document.addEventListener('keydown', (e) => {
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') openModal(currentIndex - 1);
+  if (e.key === 'ArrowRight') openModal(currentIndex + 1);
+  if (e.key === 'Escape') closeModal();
+});
+
+// swipe left/right on the card to move between ranks
+let touchStartX = null;
+modalCard.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, {passive:true});
+modalCard.addEventListener('touchend', (e) => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 45) {
+    if (dx > 0) openModal(currentIndex - 1); else openModal(currentIndex + 1);
+  }
+  touchStartX = null;
+}, {passive:true});
+
+</script>
+
+
+<script id="student-badges-data" type="application/json">{}</script>
+<script id="student-ranks-data" type="application/json">[{"id":1,"img":"emperor-empress","name":"Emperor &amp; Empress","group":"The Royal Court &middot; Ceremonial Pathway","scope":"School-wide &middot; Ceremonial","color":"#D6AF36","criteria":"Royal selection: beauty/presentation, family investment and wealth, parental donations, and the donations or resources the candidate carries into MGR are primary factors influencing entry and progression within the royal tier.","steps":"Rise through the Royal Court tiers, maintain flawless conduct, and be nominated by staff and endorsed by the Senior Prefect body.","purpose":"The highest ceremonial honour in the school - represents excellence, unity, and the standard every other rank looks up to.","motivation":"Wear the crown with humility. Lead by example."},{"id":2,"img":"junior-king-queen","name":"Junior King &amp; Queen","group":"The Royal Court &middot; Ceremonial Pathway","scope":"School-wide &middot; Ceremonial","color":"#C94B52","criteria":"Royal selection: beauty/presentation, family investment and wealth, parental donations, and the donations or resources the candidate carries into MGR influence selection and progression within the royal tier.","steps":"Build a record of discipline, academic consistency, and peer respect; recommended by class teachers and form supervisors.","purpose":"Grooms the next generation of ceremonial leadership and keeps the Royal Court pathway aspirational.","motivation":"Every crown starts with consistency."},{"id":3,"img":"crown-prince-princess","name":"Crown Prince &amp; Princess","group":"The Royal Court &middot; Ceremonial Pathway","scope":"School-wide &middot; Ceremonial","color":"#4B7BC1","criteria":"Royal selection: beauty/presentation, family investment and wealth, parental donations, and the donations or resources the candidate carries into MGR influence selection and progression within the royal tier.","steps":"Demonstrate reliability in class duties, active participation, and good standing with staff over a full term.","purpose":"The entry point into the Royal Court - recognises rising leaders early.","motivation":"Today's promise is tomorrow's crown."},{"id":4,"img":"main-senior-prefect","name":"Main Senior Prefect / President","group":"Executive Senior Prefects","scope":"School-wide &middot; Executive","color":"#A86BFF","criteria":"The most senior elected student leader - head of the school's entire executive prefect body.","steps":"Serve in a departmental or class leadership role first, then contest or be appointed through the school's prefect selection process.","purpose":"Heads the student leadership structure and represents the student body to staff and management.","motivation":"Leadership is service - carry the school on your shoulders."},{"id":5,"img":"senior-prefect-vp","name":"Senior Prefect Vice President","group":"Executive Senior Prefects","scope":"School-wide &middot; Executive","color":"#4FA7A0","criteria":"Second-in-command of the executive body - strong organisational and mediation skills required.","steps":"Support the Main Senior Prefect, deputise in their absence, and show readiness to lead departmental prefects.","purpose":"Ensures continuity of leadership and backs up the President in all executive duties.","motivation":"Every great leader needs a steady second."},{"id":6,"img":"sports-prefect","name":"Sports Prefect","group":"Departmental Senior Prefects","scope":"School-wide &middot; Departmental","color":"#2EAD68","criteria":"Awarded to a student with strong sporting discipline and the ability to organise fellow students during games and PE.","steps":"Show consistent participation in sports, fair play, and help coordinate house/inter-class sporting activities.","purpose":"Coordinates sports activities, equipment, and team discipline across the school.","motivation":"Discipline on the field builds discipline for life."},{"id":7,"img":"discipline-prefect","name":"Discipline Prefect","group":"Departmental Senior Prefects","scope":"School-wide &middot; Departmental","color":"#E0A52B","criteria":"For students with an impeccable conduct record and the maturity to help enforce school rules fairly.","steps":"Maintain a clean disciplinary record, show fairness in past monitor duties, and earn staff trust.","purpose":"Helps uphold order, fairness, and the school's code of conduct among students.","motivation":"True authority is earned through fairness."},{"id":8,"img":"academic-prefect","name":"Academic Prefect","group":"Departmental Senior Prefects","scope":"School-wide &middot; Departmental","color":"#3C8FE8","criteria":"Awarded for strong academic performance combined with a willingness to support classmates' learning.","steps":"Maintain consistently high grades and actively help organise study groups, assignments, or reading initiatives.","purpose":"Champions academic culture and supports teachers with class learning activities.","motivation":"Knowledge shared is knowledge multiplied."},{"id":9,"img":"health-sanitation-prefect","name":"Health &amp; Sanitation Prefect","group":"Departmental Senior Prefects","scope":"School-wide &middot; Departmental","color":"#35B6A3","criteria":"For students who show consistent hygiene awareness and care for the school's cleanliness and wellbeing standards.","steps":"Take initiative in cleanliness drives, report health/safety concerns, and set a personal hygiene example.","purpose":"Oversees sanitation standards and basic health awareness across the school compound.","motivation":"A clean school starts with one committed leader."},{"id":10,"img":"time-keeper-prefect","name":"Time Keeper Prefect","group":"SSS1 Exclusive &amp; Universal Classroom Leaders","scope":"SSS1 Only","color":"#7186B8","criteria":"An SSS1-exclusive role for a dependable student trusted to manage class time and routine keeping.","steps":"Show punctuality and reliability early in SSS1; nominated by the form teacher for the role.","purpose":"Keeps track of class schedules, timing, and routine order specific to the SSS1 level.","motivation":"Small responsibilities build big leaders."},{"id":11,"img":"class-captain","name":"Class Captain","group":"SSS1 Exclusive &amp; Universal Classroom Leaders","scope":"All Classes &middot; Universal","color":"#E05A7A","criteria":"Chosen by classmates and teachers as the most reliable, respected student in a classroom.","steps":"Show consistent good conduct and be voted or appointed as the class representative.","purpose":"Represents the class in school matters and keeps order when a teacher is absent.","motivation":"A captain steadies the class, one day at a time."},{"id":12,"img":"assistant-class-captain","name":"Assistant Class Captain","group":"SSS1 Exclusive &amp; Universal Classroom Leaders","scope":"All Classes &middot; Universal","color":"#C46A9C","criteria":"Supports the Class Captain - the next most trusted and dependable student in the class.","steps":"Assist the Class Captain in daily duties and be ready to step in whenever needed.","purpose":"Backs up the Class Captain and shares classroom leadership responsibilities.","motivation":"Great support makes great leadership possible."},{"id":13,"img":"head-boy-governor","name":"Head Boy / Governor","group":"Junior Secondary (JSS3 Only) &mdash; Governors","scope":"JSS3 Only","color":"#9B4DFF","criteria":"The top male student leader of the Junior Secondary section - proven leadership across JSS1&ndash;JSS3.","steps":"Rise through class and departmental leadership roles in Junior Secondary, then be selected for the Governor role in JSS3.","purpose":"Leads and represents the entire Junior Secondary male student body.","motivation":"Govern with fairness. Lead with heart."},{"id":14,"img":"head-girl-deputy-governor","name":"Head Girl / Deputy Governor","group":"Junior Secondary (JSS3 Only) &mdash; Governors","scope":"JSS3 Only","color":"#E06B9A","criteria":"The top female student leader of the Junior Secondary section - proven leadership across JSS1&ndash;JSS3.","steps":"Rise through class and departmental leadership roles in Junior Secondary, then be selected for the Deputy Governor role in JSS3.","purpose":"Leads and represents the entire Junior Secondary female student body, supporting the Governor.","motivation":"Govern with fairness. Lead with heart."},{"id":15,"img":"head-boy-primary","name":"Head Boy","group":"Primary Section (Basic 4 &amp; 5 Only)","scope":"Basic 4 &amp; 5 Only","color":"#7D8FE8","criteria":"The top male student leader of the Primary section - good conduct and a helpful attitude in class.","steps":"Show consistent good behaviour and be recommended by the class teacher in Basic 4 or 5.","purpose":"Represents the boys of the Primary section and helps the class teacher keep order.","motivation":"Little leaders grow into great ones.","note":"Primary Heads carry no “Governor” title - that title belongs only to the JSS3 Junior Secondary Governors above."},{"id":16,"img":"head-girl-primary","name":"Head Girl","group":"Primary Section (Basic 4 &amp; 5 Only)","scope":"Basic 4 &amp; 5 Only","color":"#B07AE8","criteria":"The top female student leader of the Primary section - good conduct and a helpful attitude in class.","steps":"Show consistent good behaviour and be recommended by the class teacher in Basic 4 or 5.","purpose":"Represents the girls of the Primary section and helps the class teacher keep order.","motivation":"Little leaders grow into great ones.","note":"Primary Heads carry no “Governor” title - that title belongs only to the JSS3 Junior Secondary Governors above."}]</script>
+<script>
+(function(){
+  'use strict';
+
+  function virtualStudentFigure(entry, isModal){
+    const n=String(entry.name||'').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+    const c=entry.color||'#b9a8d6';
+    const palettes={
+      'Emperor & Empress':['#f7df8a','#6d4c00','royal-crown'],
+      'Junior King & Queen':['#ff8b95','#5b1820','royal-double'],
+      'Crown Prince & Princess':['#77b7ff','#173c73','royal-prince'],
+      'Main Senior Prefect / President':['#c79cff','#3b1b72','president'],
+      'Senior Prefect Vice President':['#73d5ca','#174e49','vice'],
+      'Sports Prefect':['#68dc91','#164f2d','sports'],
+      'Discipline Prefect':['#f4ca58','#604400','justice'],
+      'Academic Prefect':['#67b4ff','#163f69','academic'],
+      'Health & Sanitation Prefect':['#63e0c6','#15584e','health'],
+      'Time Keeper Prefect':['#9db5ee','#273b70','keeper'],
+      'Class Captain':['#ff8cab','#681e35','captain'],
+      'Assistant Class Captain':['#e69bc4','#642b50','assistant'],
+      'Head Boy / Governor':['#bb79ff','#3d176b','governor'],
+      'Head Girl / Deputy Governor':['#ff9dbb','#711f43','deputy'],
+      'Head Boy':['#9aaeff','#283d7b','headboy'],
+      'Head Girl':['#d29aff','#52247a','headgirl']
+    };
+    const [hi,dark,motif]=palettes[n]||['#dfb25c','#5b4518','star'];
+    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const uid='badge_'+String(entry.name||'badge').replace(/[^a-z0-9]+/gi,'_')+'_'+(entry.level||0)+'_'+(isModal?'m':'g');
+    const common=`
+      <defs>
+        <linearGradient id="g${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hi}"/><stop offset=".52" stop-color="${c}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+        <radialGradient id="r${uid}"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".55" stop-color="${c}" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></radialGradient>
+        <filter id="s${uid}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".55"/><feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="b"/><feSpecularLighting in="b" surfaceScale="3" specularConstant=".45" lighting-color="#fff" result="l"><feDistantLight azimuth="225" elevation="55"/></feSpecularLighting><feComposite in="l" in2="SourceAlpha" operator="in" result="s"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="s"/></feMerge></filter>
+      </defs>
+      <circle cx="110" cy="110" r="103" fill="#070914" stroke="${c}" stroke-width="5"/>
+      <circle cx="110" cy="110" r="91" fill="url(#r${uid})" stroke="#fff" stroke-opacity=".16" stroke-width="2"/>
+      <circle cx="110" cy="110" r="82" fill="none" stroke="${hi}" stroke-opacity=".7" stroke-width="3" stroke-dasharray="3 7"/>
+    `;
+    const crest=`<path d="M55 70 L110 40 L165 70 L157 135 Q110 174 63 135 Z" fill="url(#g${uid})" stroke="#fff" stroke-opacity=".55" stroke-width="3" filter="url(#s${uid})"/>`;
+    let icon='';
+    if(motif==='royal-crown') icon=`<path d="M70 96 L59 58 L88 77 L110 43 L132 77 L161 58 L150 96 Z" fill="url(#g${uid})" stroke="#fff7cf" stroke-width="4" filter="url(#s${uid})"/><path d="M72 96 H148 L143 112 H77 Z" fill="${dark}" stroke="#fff" stroke-width="2"/><path d="M88 72 L88 94 M110 53 L110 94 M132 72 L132 94" stroke="#fff4b8" stroke-width="3"/><path d="M110 30 L114 38 L123 39 L116 45 L118 54 L110 49 L102 54 L104 45 L97 39 L106 38 Z" fill="#fff7c2" stroke="#d8b45f" stroke-width="2"/>`;
+    if(motif==='royal-double') icon=`<path d="M68 94 L59 62 L86 78 L100 55 L110 80 L120 55 L134 78 L161 62 L152 94 Z" fill="url(#g${uid})" stroke="#fff7cf" stroke-width="4" filter="url(#s${uid})"/><rect x="69" y="94" width="82" height="15" rx="5" fill="${dark}" stroke="#fff" stroke-width="2"/><polygon points="88,71 100,58 110,78 100,90" fill="#9ee8ff" stroke="#fff" stroke-width="2"/><polygon points="132,71 120,58 110,78 120,90" fill="#d9b8ff" stroke="#fff" stroke-width="2"/><path d="M110 84 L110 141" stroke="#fff2ad" stroke-width="4"/>`;
+    if(motif==='royal-prince') icon=`<path d="M67 94 L61 66 L84 80 L98 57 L110 81 L122 57 L136 80 L159 66 L153 94 Z" fill="url(#g${uid})" stroke="#fff7cf" stroke-width="3"/><path d="M83 111 Q110 91 137 111 L130 140 Q110 153 90 140 Z" fill="${dark}" stroke="#fff" stroke-width="3"/><polygon points="110,103 124,117 110,133 96,117" fill="#a8e7ff" stroke="#fff7cf" stroke-width="2"/>`;
+    if(motif==='president') icon=`<path d="M78 82 L110 55 L142 82" fill="none" stroke="#fff" stroke-width="8"/><path d="M84 82 V128 M136 82 V128 M77 128 H143" stroke="#fff" stroke-width="7"/><circle cx="110" cy="99" r="15" fill="${dark}" stroke="#fff" stroke-width="4"/><path d="M101 99 L108 106 L121 91" fill="none" stroke="${hi}" stroke-width="5"/>`;
+    if(motif==='vice') icon=`<path d="M77 79 Q110 49 143 79" fill="none" stroke="#fff" stroke-width="9"/><path d="M87 79 V130 M133 79 V130" stroke="#fff" stroke-width="8"/><path d="M78 130 H142" stroke="#fff" stroke-width="7"/><path d="M98 99 L110 111 L123 94" fill="none" stroke="${hi}" stroke-width="7" stroke-linecap="round"/>`;
+    if(motif==='sports') icon=`<circle cx="110" cy="102" r="35" fill="#fff" fill-opacity=".92"/><path d="M110 67 V137 M75 102 H145 M85 77 L135 127 M135 77 L85 127" stroke="${dark}" stroke-width="5"/><path d="M93 143 H127" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M110 137 V151" stroke="#fff" stroke-width="7"/>`;
+    if(motif==='justice') icon=`<path d="M110 63 V139 M83 140 H137" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M73 76 H147 M84 76 L72 101 H96 Z M136 76 L124 101 H148 Z" fill="none" stroke="#fff" stroke-width="5"/><circle cx="110" cy="58" r="9" fill="${hi}" stroke="#fff" stroke-width="3"/>`;
+    if(motif==='academic') icon=`<path d="M64 83 L110 58 L156 83 L110 108 Z" fill="#fff" stroke="${dark}" stroke-width="4"/><path d="M82 98 V124 Q110 144 138 124 V98" fill="none" stroke="#fff" stroke-width="7"/><path d="M110 108 V141" stroke="${hi}" stroke-width="5"/>`;
+    if(motif==='health') icon=`<circle cx="110" cy="103" r="39" fill="#fff"/><path d="M98 75 H122 V91 H138 V115 H122 V131 H98 V115 H82 V91 H98 Z" fill="${dark}"/><path d="M110 66 V140 M77 103 H143" stroke="#fff" stroke-opacity=".55" stroke-width="3"/>`;
+    if(motif==='keeper') icon=`<rect x="78" y="83" width="64" height="55" rx="7" fill="#fff"/><path d="M92 83 V72 Q92 58 110 58 Q128 58 128 72 V83" fill="none" stroke="#fff" stroke-width="9"/><circle cx="110" cy="110" r="9" fill="${dark}"/><path d="M110 110 L124 100" stroke="${hi}" stroke-width="5"/>`;
+    if(motif==='captain') icon=`<circle cx="110" cy="103" r="36" fill="none" stroke="#fff" stroke-width="7"/><path d="M110 67 V139 M74 103 H146" stroke="#fff" stroke-width="5"/><path d="M94 103 L106 115 L129 89" fill="none" stroke="${hi}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if(motif==='assistant') icon=`<path d="M82 76 L110 61 L138 76 V115 Q110 142 82 115 Z" fill="none" stroke="#fff" stroke-width="7"/><path d="M91 100 L102 111 L129 84" fill="none" stroke="${hi}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M69 128 H151" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`;
+    if(motif==='governor') icon=`<path d="M75 139 V88 L110 65 L145 88 V139" fill="none" stroke="#fff" stroke-width="8"/><path d="M92 139 V105 H128 V139" fill="${dark}" stroke="#fff" stroke-width="5"/><path d="M68 88 H152" stroke="${hi}" stroke-width="7"/>`;
+    if(motif==='deputy') icon=`<path d="M72 137 V91 L110 63 L148 91 V137" fill="none" stroke="#fff" stroke-width="8"/><path d="M88 137 V105 H132 V137" fill="${dark}" stroke="#fff" stroke-width="5"/><path d="M65 91 H155" stroke="${hi}" stroke-width="7"/><circle cx="110" cy="78" r="8" fill="${hi}"/>`;
+    if(motif==='headboy') icon=`<path d="M68 91 L110 61 L152 91" fill="none" stroke="#fff" stroke-width="9"/><path d="M78 91 V134 H142 V91" fill="${dark}" stroke="#fff" stroke-width="6"/><path d="M92 105 H128 M92 119 H128" stroke="${hi}" stroke-width="6" stroke-linecap="round"/>`;
+    if(motif==='headgirl') icon=`<path d="M69 93 L110 60 L151 93" fill="none" stroke="#fff" stroke-width="9"/><path d="M80 93 V135 H140 V93" fill="${dark}" stroke="#fff" stroke-width="6"/><circle cx="110" cy="108" r="13" fill="none" stroke="${hi}" stroke-width="5"/><path d="M94 132 Q110 119 126 132" fill="none" stroke="#fff" stroke-width="5"/>`;
+    if(!icon) icon=`<path d="M110 64 L123 92 L154 96 L131 117 L137 148 L110 133 L83 148 L89 117 L66 96 L97 92 Z" fill="#fff" stroke="${dark}" stroke-width="4"/>`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="${esc(n)} badge">${common}${crest}${icon}<circle cx="110" cy="110" r="73" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1"/></svg>`;
+    return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+  }
+
+  const STUDENT_IMAGES = JSON.parse(document.getElementById('student-badges-data').textContent);
+  const STUDENT_RANKS = JSON.parse(document.getElementById('student-ranks-data').textContent);
+
+  // ---------- tabs ----------
+  const staffTabBtn = document.getElementById('staffTabBtn');
+  const studentTabBtn = document.getElementById('studentTabBtn');
+  const medalTabBtn = document.getElementById('medalTabBtn');
+  const staffPanel = document.getElementById('staffPanel');
+  const studentPanel = document.getElementById('studentPanel');
+  const medalPanel = document.getElementById('medalPanel');
+  const subtitle = document.getElementById('pageSubtitle');
+  const STAFF_SUB = 'Competitor Level Rankings  -  The Geometric Code  -  Tap any badge for details';
+  const STUDENT_SUB = 'Official School Leadership Badge Collection  -  Tap any badge for details';
+  const MEDAL_SUB = 'MGR Medals &amp; Record Recognition  -  Placement, Record Maker &amp; Record Breaker';
+
+  function showStaff(){
+    staffTabBtn.classList.add('active'); studentTabBtn.classList.remove('active'); medalTabBtn.classList.remove('active');
+    staffPanel.style.display=''; studentPanel.style.display='none'; medalPanel.style.display='none';
+    subtitle.textContent = STAFF_SUB;
+  }
+  function showStudent(){
+    studentTabBtn.classList.add('active'); staffTabBtn.classList.remove('active'); medalTabBtn.classList.remove('active');
+    studentPanel.style.display=''; staffPanel.style.display='none'; medalPanel.style.display='none';
+    subtitle.textContent = STUDENT_SUB;
+  }
+  function showMedals(){
+    medalTabBtn.classList.add('active'); staffTabBtn.classList.remove('active'); studentTabBtn.classList.remove('active');
+    medalPanel.style.display=''; staffPanel.style.display='none'; studentPanel.style.display='none';
+    subtitle.textContent = MEDAL_SUB;
+  }
+  staffTabBtn.addEventListener('click', showStaff);
+  studentTabBtn.addEventListener('click', showStudent);
+  medalTabBtn.addEventListener('click', showMedals);
+
+  // ---------- render student grid ----------
+  const studentGrid = document.getElementById('studentGrid');
+  // A group's header subtitle only shows a single scope tag when every
+  // badge in that group actually shares the same scope; groups that mix
+  // scopes (e.g. one SSS1-only badge next to two universal ones) get a
+  // neutral label instead of a misleading single tag.
+  const GROUP_SCOPES = {};
+  STUDENT_RANKS.forEach(e => {
+    (GROUP_SCOPES[e.group] = GROUP_SCOPES[e.group] || new Set()).add(e.scope);
+  });
+  function groupSubtitle(group){
+    const set = GROUP_SCOPES[group];
+    return set.size === 1 ? [...set][0] : 'Mixed scope - see each badge below';
+  }
+
+  let lastGroup = null;
+  STUDENT_RANKS.forEach((entry, i) => {
+    if (entry.group !== lastGroup) {
+      lastGroup = entry.group;
+      const title = document.createElement('div');
+      title.className = 'student-group-title';
+      title.innerHTML = `<h3>${entry.group}</h3><span>${groupSubtitle(entry.group)}</span>`;
+      studentGrid.appendChild(title);
+    }
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'student-badge-cell';
+    cell.style.setProperty('--sglow', entry.color);
+    const showTag = GROUP_SCOPES[entry.group].size > 1;
+    cell.innerHTML = `<div class="student-badge-circle"><img src="${virtualStudentFigure(entry)}" alt="${entry.name}"></div><div class="s-name">${entry.name}</div>` + (showTag ? `<div class="s-scope-tag">${entry.scope}</div>` : '');
+    cell.addEventListener('click', () => openStudentModal(i));
+    studentGrid.appendChild(cell);
+  });
+
+  // ---------- student modal ----------
+  const sOverlay = document.getElementById('studentModalOverlay');
+  const sCard = document.getElementById('studentModalCard');
+  const sPrevBtn = document.getElementById('studentPrevBtn');
+  const sNextBtn = document.getElementById('studentNextBtn');
+  let sIndex = 0;
+
+  function openStudentModal(index){
+    index = Math.max(0, Math.min(STUDENT_RANKS.length - 1, index));
+    sIndex = index;
+    const entry = STUDENT_RANKS[index];
+
+    document.getElementById('studentModalBadgeWrap').innerHTML =
+      `<img src="${virtualStudentFigure(entry, true)}" alt="${entry.name}">`;
+    document.getElementById('studentModalName').innerHTML = entry.name;
+    document.getElementById('studentModalGroup').innerHTML = entry.group;
+    document.getElementById('studentModalScope').textContent = entry.scope.replace(/&middot;/g,' - ').replace(/&amp;/g,'&');
+    document.getElementById('studentModalCriteria').innerHTML = entry.criteria;
+    document.getElementById('studentModalSteps').innerHTML = entry.steps;
+    document.getElementById('studentModalPurpose').innerHTML = entry.purpose;
+    document.getElementById('studentModalMotiv').textContent = entry.motivation;
+
+    const noteEl = document.getElementById('studentModalNote');
+    if (entry.note) { noteEl.innerHTML = entry.note; noteEl.style.display=''; }
+    else { noteEl.style.display='none'; }
+
+    sCard.style.boxShadow = `0 20px 60px rgba(0,0,0,.6), 0 0 30px ${entry.color}55`;
+
+    sPrevBtn.disabled = index === 0;
+    sNextBtn.disabled = index === STUDENT_RANKS.length - 1;
+
+    sOverlay.classList.add('open');
+  }
+  function closeStudentModal(){ sOverlay.classList.remove('open'); }
+
+  document.getElementById('studentModalClose').addEventListener('click', closeStudentModal);
+  sOverlay.addEventListener('click', (e) => { if (e.target === sOverlay) closeStudentModal(); });
+  sPrevBtn.addEventListener('click', () => openStudentModal(sIndex - 1));
+  sNextBtn.addEventListener('click', () => openStudentModal(sIndex + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (!sOverlay.classList.contains('open')) return;
+    if (e.key === 'ArrowLeft') openStudentModal(sIndex - 1);
+    if (e.key === 'ArrowRight') openStudentModal(sIndex + 1);
+    if (e.key === 'Escape') closeStudentModal();
+  });
+
+  let sTouchStartX = null;
+  sCard.addEventListener('touchstart', (e) => { sTouchStartX = e.touches[0].clientX; }, {passive:true});
+  sCard.addEventListener('touchend', (e) => {
+    if (sTouchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - sTouchStartX;
+    if (Math.abs(dx) > 45) {
+      if (dx > 0) openStudentModal(sIndex - 1); else openStudentModal(sIndex + 1);
+    }
+    sTouchStartX = null;
+  }, {passive:true});
+})();
+
+  // ---------- MGR V34 Record Maker / Record Breaker Engine ----------
+  // Translated from the supplied RecordEngine rules: first verified result = RM;
+  // a superior later result = RB + RM; otherwise no record badge.
+  const RECORD_STORAGE_KEY='mrg_record_engine_v35';
+  let recordState={};
+  try{ recordState=JSON.parse(localStorage.getItem(RECORD_STORAGE_KEY)||'{}')||{}; }catch(_){ recordState={}; }
+  function saveRecordState(){ try{ localStorage.setItem(RECORD_STORAGE_KEY,JSON.stringify(recordState)); }catch(_){} }
+  function escHtml(v){ return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtValue(v){ const n=Number(v); return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:6}):String(v); }
+  function currentSeason(){ const el=document.getElementById('recordSeason'); return el&&el.value?el.value:'2026/27'; }
+  function pushHistory(entry){ if(!Array.isArray(recordState.__history)) recordState.__history=[]; recordState.__history.unshift(entry); if(recordState.__history.length>1000) recordState.__history.length=1000; }
+  function evaluateRecord(item){
+    const categoryId=String(item.category_id||'').trim().toLowerCase(); const candidate=String(item.candidate_name||'').trim(); const val=Number(item.value); const unit=String(item.unit||'').trim(); const lower=!!item.lower_is_better; const season=String(item.season||currentSeason());
+    if(!categoryId||!candidate||!Number.isFinite(val)) return {error:'Enter a category, candidate name and numeric result.'};
+    const previous=recordState[categoryId]; const response={candidate_name:candidate,category_id:categoryId,submitted_value:val,unit,season,earned_rb:false,earned_rm:false,badges:[],previous_record:previous?{holder:previous.holder,value:previous.value,unit:previous.unit}:null,protocol_log:''};
+    const stamp=new Date().toISOString();
+    if(!previous){ recordState[categoryId]={holder:candidate,value:val,unit,lower_is_better:lower,established_at:stamp,season}; response.earned_rm=true;response.badges=['RM'];response.protocol_log=`[RM AWARDED] First verified entry in '${categoryId}'. ${candidate} set the initial record at ${fmtValue(val)} ${unit}.`; pushHistory({kind:'record',status:'RM',categoryId,candidate,value:val,unit,season,at:stamp,previous:null});saveRecordState();return response; }
+    const isBroken=lower?val<Number(previous.value):val>Number(previous.value);
+    if(isBroken){ const old=previous; recordState[categoryId]={holder:candidate,value:val,unit,lower_is_better:lower,established_at:stamp,season};response.earned_rb=true;response.earned_rm=true;response.badges=['RB','RM'];response.protocol_log=`[RB + RM AWARDED] ${candidate} broke ${old.holder}'s record (${fmtValue(old.value)} ${old.unit||unit}) with ${fmtValue(val)} ${unit}. ${candidate} is now the Record Breaker and the new Record Maker.`; pushHistory({kind:'record',status:'RB + RM',categoryId,candidate,value:val,unit,season,at:stamp,previous:{holder:old.holder,value:old.value,unit:old.unit}});saveRecordState(); }
+    else response.protocol_log=`[NO RECORD] ${candidate}'s value (${fmtValue(val)} ${unit}) did not beat ${previous.holder}'s record (${fmtValue(previous.value)} ${previous.unit||unit}).`;
+    return response;
+  }
+  function medalHistoryItems(title,season){
+    const history=Array.isArray(recordState.__medalHistory)?recordState.__medalHistory:[]; return history.filter(x=>x.medal===title && (season==='all'||x.season===season)).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  }
+  function openMedalHistory(title){
+    const modal=document.getElementById('medalHistoryModal'), list=document.getElementById('medalHistoryList'), filter=document.getElementById('medalSeasonFilter'); if(!modal||!list||!filter)return;
+    document.getElementById('medalHistoryTitle').textContent=title+' History';
+    const render=()=>{ const rows=medalHistoryItems(title,filter.value); list.innerHTML=rows.length?rows.map(x=>`<div class="history-row"><div><strong>${escHtml(x.name)}</strong><div class="history-meta">Season ${escHtml(x.season)} · ${new Date(x.at).toLocaleString()}${x.category?` · ${escHtml(x.category)}`:''}</div></div><span class="history-badge gold">VERIFIED</span></div>`).join(''):'<div class="history-empty">No verified winners have been recorded for this medal in the selected season.</div>'; };
+    filter.onchange=render; render(); modal.classList.add('open');
+  }
+  function closeMedalHistory(){ const m=document.getElementById('medalHistoryModal'); if(m)m.classList.remove('open'); }
+  document.querySelectorAll('.medal-card[data-medal]').forEach(card=>{ const fn=()=>openMedalHistory(card.dataset.medal); card.addEventListener('click',fn); card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();fn();}}); });
+  document.getElementById('medalHistoryClose')?.addEventListener('click',closeMedalHistory); document.getElementById('medalHistoryModal')?.addEventListener('click',e=>{if(e.target.id==='medalHistoryModal')closeMedalHistory();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMedalHistory();});
+  const recordForm=document.getElementById('recordEngineForm');
+  const recordResult=document.getElementById('recordEngineResult');
+  const recordLog=document.getElementById('recordEngineLog');
+  if(recordForm){
+    recordForm.addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const result=evaluateRecord({category_id:document.getElementById('recordCategory').value,candidate_name:document.getElementById('recordCandidate').value,value:document.getElementById('recordValue').value,unit:document.getElementById('recordUnit').value,lower_is_better:document.getElementById('recordLowerBetter').checked,season:currentSeason()});
+      if(result.error){recordResult.innerHTML=`<strong>CHECK:</strong> ${escHtml(result.error)}`;return;}
+      const badges=result.badges.length?result.badges.map(b=>`<span class="record-status ${b==='RB'?'rb':'rm'}">${b}</span>`).join(''):'<span class="record-status none">NO RECORD</span>';
+      const previous=result.previous_record?` Previous: ${escHtml(result.previous_record.holder)} — ${escHtml(fmtValue(result.previous_record.value))} ${escHtml(result.previous_record.unit||'')}.`:'';
+      recordResult.innerHTML=badges+` <strong>${escHtml(result.candidate_name)}</strong> — ${escHtml(result.protocol_log)}${previous}`;
+      const row=document.createElement('div');row.textContent=result.protocol_log;recordLog.prepend(row);
+      recordForm.reset();
+    });
+  }
+  const recordHistoryModal=document.getElementById('recordHistoryModal');
+  const recordHistoryList=document.getElementById('recordHistoryList');
+  const recordHistorySeason=document.getElementById('recordHistorySeason');
+  function renderRecordHistory(){ if(!recordHistoryList)return; const season=recordHistorySeason?.value||'all'; const rows=(Array.isArray(recordState.__history)?recordState.__history:[]).filter(x=>season==='all'||x.season===season).sort((a,b)=>String(b.at).localeCompare(String(a.at))); recordHistoryList.innerHTML=rows.length?rows.map(x=>{const status=x.status==='RB + RM'?'RB + RM':x.status; const cls=status.includes('RB')?'rb':status==='RM'?'rm':'gold'; return `<div class="history-row"><div><strong>${escHtml(x.candidate)}</strong><div class="history-meta">${escHtml(x.categoryId)} · Season ${escHtml(x.season)} · ${fmtValue(x.value)} ${escHtml(x.unit)}</div></div><span class="history-badge ${cls}">${escHtml(status)}</span></div>`}).join(''):'<div class="history-empty">No record-recognition entries have been verified for the selected season.</div>'; }
+  document.getElementById('recordHistoryButton')?.addEventListener('click',()=>{renderRecordHistory();recordHistoryModal?.classList.add('open');}); recordHistorySeason?.addEventListener('change',renderRecordHistory); document.getElementById('recordHistoryClose')?.addEventListener('click',()=>recordHistoryModal?.classList.remove('open')); recordHistoryModal?.addEventListener('click',e=>{if(e.target===recordHistoryModal)recordHistoryModal.classList.remove('open');});
+</script>
+
+<div class="medal-history-modal" id="recordHistoryModal" role="dialog" aria-modal="true"><div class="medal-history-card"><div class="medal-history-head"><div><h3>Record Recognition History</h3><div class="history-meta">Record Maker • Record Breaker • No Record</div></div><button class="medal-history-close" id="recordHistoryClose" type="button">×</button></div><div class="history-filter"><select id="recordHistorySeason"><option value="all">All seasons</option><option>2026/27</option><option>2027/28</option><option>2028/29</option></select></div><div class="history-list" id="recordHistoryList"></div></div></div><script id="mrg-v37-cloud-sync">
+(function(){
+  'use strict';
+  const statusEl=document.getElementById('recordCloudStatus');
+  const setStatus=(kind,msg)=>{if(statusEl){statusEl.className='record-cloud-status '+(kind||'');statusEl.innerHTML='<span class="cloud-dot"></span><span>'+String(msg).replace(/[&<>]/g,'')+'</span>';}};
+  const CLOUD_URL='https://aqorpbqvorbykxpzuoqi.supabase.co';
+  const CLOUD_KEY='sb_publishable_lIOvPUyYirnSWBN4SBfQYg_Yj2LWJHO';
+  let client=null, channel=null;
+  const medalCodeByTitle={
+    '1st Place - Gold':'gold','2nd Place - Silver':'silver','3rd Place - Brass':'brass','4th Place - Copper':'copper','5th Place - Bronze':'bronze'
+  };
+  function mergeUnique(arr,item,key){if(!Array.isArray(arr))arr=[];const k=key(item);if(!arr.some(x=>key(x)===k))arr.push(item);return arr;}
+  function cloudMedalToLocal(row){return {medal:Object.entries(medalCodeByTitle).find(([_,v])=>v===row.medal_code)?.[0]||row.medal_code,name:row.recipient_name,category:row.category||'',season:row.season,at:row.awarded_at,cloud:true};}
+  function cloudRecordToLocal(row){return {kind:'record',status:row.status,categoryId:row.category_id,candidate:row.candidate_name,value:Number(row.value),unit:row.unit||'',season:row.season,at:row.created_at,previous:row.previous_holder?{holder:row.previous_holder,value:Number(row.previous_value),unit:row.previous_unit||''}:null,cloud:true};}
+  async function initialSync(){
+    if(!client)return;
+    try{
+      const [medals,records,benchmarks]=await Promise.all([
+        client.from('mgr_medal_awards').select('id,medal_code,recipient_name,category,season,awarded_at').eq('verified',true).order('awarded_at',{ascending:false}).limit(2000),
+        client.from('mgr_record_entries').select('id,category_id,candidate_name,value,unit,season,status,previous_holder,previous_value,previous_unit,created_at').eq('verified',true).order('created_at',{ascending:false}).limit(5000),
+        client.from('mgr_record_benchmarks').select('category_id,holder_name,metric_value,unit,lower_is_better,season,established_at,updated_at').limit(5000)
+      ]);
+      if(medals.error)throw medals.error;if(records.error)throw records.error;if(benchmarks.error)throw benchmarks.error;
+      if(Array.isArray(medals.data)){for(const row of medals.data){recordState.__medalHistory=mergeUnique(recordState.__medalHistory,cloudMedalToLocal(row),x=>String(x.medal)+'|'+String(x.name)+'|'+String(x.season)+'|'+String(x.at));}}
+      if(Array.isArray(records.data)){for(const row of records.data){recordState.__history=mergeUnique(recordState.__history,cloudRecordToLocal(row),x=>String(x.status)+'|'+String(x.categoryId)+'|'+String(x.candidate)+'|'+String(x.at));}}
+      if(Array.isArray(benchmarks.data)){for(const row of benchmarks.data){const key=String(row.category_id).trim().toLowerCase();recordState[key]={holder:row.holder_name,value:Number(row.metric_value),unit:row.unit||'',lower_is_better:!!row.lower_is_better,season:row.season,established_at:row.established_at,updated_at:row.updated_at,cloud:true};}}
+      saveRecordState();
+      if(typeof renderRecordHistory==='function')renderRecordHistory();
+      setStatus('online','Cloud records: live sync connected');
+    }catch(err){setStatus('offline','Cloud records: offline — local fallback active');}
+  }
+  function subscribe(){
+    if(!client)return;
+    try{
+      channel=client.channel('mrg-recognition-v37')
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'mgr_medal_awards',filter:'verified=eq.true'},payload=>{
+          recordState.__medalHistory=mergeUnique(recordState.__medalHistory,cloudMedalToLocal(payload.new),x=>String(x.medal)+'|'+String(x.name)+'|'+String(x.season)+'|'+String(x.at));saveRecordState();
+        })
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'mgr_record_entries',filter:'verified=eq.true'},payload=>{
+          recordState.__history=mergeUnique(recordState.__history,cloudRecordToLocal(payload.new),x=>String(x.status)+'|'+String(x.categoryId)+'|'+String(x.candidate)+'|'+String(x.at));saveRecordState();if(typeof renderRecordHistory==='function')renderRecordHistory();
+        })
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'mgr_record_benchmarks'},payload=>{
+          const row=payload.new,key=String(row.category_id).trim().toLowerCase();recordState[key]={holder:row.holder_name,value:Number(row.metric_value),unit:row.unit||'',lower_is_better:!!row.lower_is_better,season:row.season,established_at:row.established_at,updated_at:row.updated_at,cloud:true};saveRecordState();
+        })
+        .subscribe((state)=>{if(state==='SUBSCRIBED')setStatus('online','Cloud records: live sync connected');});
+    }catch(_){setStatus('offline','Cloud records: offline — local fallback active');}
+  }
+  function start(){
+    try{
+      if(!window.supabase||typeof window.supabase.createClient!=='function'){setStatus('offline','Cloud records: unavailable — local fallback active');return;}
+      client=window.supabase.createClient(CLOUD_URL,CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},realtime:{params:{eventsPerSecond:10}}});
+      initialSync();subscribe();
+      window.addEventListener('online',initialSync,{passive:true});
+      window.addEventListener('offline',()=>setStatus('offline','Cloud records: device offline — local fallback active'),{passive:true});
+    }catch(_){setStatus('error','Cloud records: protected fallback active');}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+<script id="mrg-v37-error-guard">
+(function(){
+  const report=(kind)=>{const el=document.getElementById('recordCloudStatus');if(el&&el.classList.contains('online'))return; if(el){el.className='record-cloud-status error';el.innerHTML='<span class="cloud-dot"></span><span>UI protected fallback active</span>';}};
+  window.addEventListener('error',()=>report('error'),{passive:true});
+  window.addEventListener('unhandledrejection',()=>report('promise'),{passive:true});
+})();
+</script>
+
+<script id="mrg-v38-v34-student-badge-recovery-hook">
+(function(){
+  'use strict';
+  const grid=document.getElementById('studentGrid');
+  if(!grid || typeof STUDENT_RANKS==='undefined' || typeof virtualStudentFigure!=='function') return;
+  window.STUDENT_RANKS_RECOVERY_SOURCE=STUDENT_RANKS;
+  window.MGR_V37_RENDER_STUDENT_BADGES=function(){
+    grid.innerHTML='';
+    const groups={}; STUDENT_RANKS.forEach(e=>(groups[e.group]=groups[e.group]||new Set()).add(e.scope));
+    let last=null;
+    STUDENT_RANKS.forEach((entry,i)=>{
+      if(entry.group!==last){ last=entry.group; const title=document.createElement('div'); title.className='student-group-title'; const set=groups[entry.group]; title.innerHTML='<h3>'+entry.group+'</h3><span>'+(set.size===1?[...set][0]:'Mixed scope - see each badge below')+'</span>'; grid.appendChild(title); }
+      const cell=document.createElement('button'); cell.type='button'; cell.className='student-badge-cell'; cell.style.setProperty('--sglow',entry.color);
+      const showTag=groups[entry.group].size>1;
+      cell.innerHTML='<div class="student-badge-circle"><img src="'+virtualStudentFigure(entry)+'" alt="'+entry.name+'"></div><div class="s-name">'+entry.name+'</div>'+(showTag?'<div class="s-scope-tag">'+entry.scope+'</div>':'');
+      if(typeof openStudentModal==='function') cell.addEventListener('click',()=>openStudentModal(i));
+      grid.appendChild(cell);
+    });
+  };
+})();
+</script>
+
+<script id="mrg-v38-v34-student-badge-recovery">
+(function(){
+  'use strict';
+  /* V38 recovery: the 16 student leadership badges are sourced exactly from V34.
+     V37's visual renderer remains untouched; this guard only rebuilds the grid if a badge failed to mount. */
+  const EXPECTED=16;
+  function recover(){
+    const grid=document.getElementById('studentGrid');
+    if(!grid || !Array.isArray(window.STUDENT_RANKS_RECOVERY_SOURCE)) return;
+    const mounted=grid.querySelectorAll('.student-badge-cell').length;
+    if(mounted===EXPECTED) return;
+    if(typeof window.MGR_V37_RENDER_STUDENT_BADGES==='function'){
+      window.MGR_V37_RENDER_STUDENT_BADGES();
+    }
+  }
+  window.MGR_V38_STUDENT_BADGE_COUNT=EXPECTED;
+  window.addEventListener('load',recover,{once:true});
+  setTimeout(recover,120);
+})();
+</script>
+</body>
+</html>
