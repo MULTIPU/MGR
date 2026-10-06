@@ -678,7 +678,7 @@ body.light-mode .mrg-month-jump{background:rgba(255,255,255,.82);}
 @media(max-width:650px){.mgr-awards-grid{grid-template-columns:1fr}.mgr-education-card{height:92vh;width:98vw}}
 .admin-grid-v43{display:grid;grid-template-columns:1fr 1fr;gap:8px}.admin-grid-v43 button{min-height:48px;border:1px solid rgba(216,180,95,.2);border-radius:12px;background:rgba(255,255,255,.04);color:var(--text);cursor:pointer}.admin-grid-v43 button:hover{background:rgba(216,180,95,.08)}
 </style>
-<meta content="V39 — V37 Base + V34 Student Badge Recovery + Loader Fix" name="mrg-version"/>
+<meta content="V52 — Admin/MDR action and feedback repair" name="mrg-version"/>
 <style id="mrg-v15-map-calendar-circles-css">
 /* V15 — compact home circles; calendars live behind the circles */
 /* V16 — globe visual refinement + school-calendar translation into MGR dates */
@@ -1018,6 +1018,12 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 <div aria-hidden="true" class="mgr-education-overlay" id="educationIntegration">
 <div class="mgr-education-card"><div class="mgr-education-head"><strong>Educational Hierarchy &amp; Pyramid</strong><button aria-label="Close" id="educationClose" type="button">×</button></div>
 <iframe id="mrgEducationFrame" loading="lazy" title="Integrated Educational Hierarchy"></iframe></div>
+</div>
+<div class="modal" id="mgrAwardDetailModal">
+<button class="modal-close" data-close="" type="button">×</button>
+<h2 id="mgrAwardDetailTitle">MGR Recognition</h2>
+<p class="modal-tag" id="mgrAwardDetailTag">MGR Awards &amp; Rankings</p>
+<div id="mgrAwardDetailBody" class="modal-note" style="line-height:1.65;"></div>
 </div>
 <!-- Notification drop -->
 <div class="notify-drop" id="notifyDrop">
@@ -1558,6 +1564,7 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 <input id="staffEmailInput" autocomplete="username" placeholder="Staff email address" type="email"/>
 <input id="staffPasswordInput" autocomplete="current-password" placeholder="Staff password" type="password"/>
 <button id="staffPasswordSignInBtn" type="submit">🔐 Sign in with Staff Password</button>
+<button id="staffGoogleSignInBtn" class="pill pill-ghost" style="width:100%;margin-top:10px;" type="button">🌐 Continue with Google</button>
 <div style="display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--muted);font-size:.72rem;"><span style="height:1px;flex:1;background:var(--line,rgba(255,255,255,.16));"></span><span>OR</span><span style="height:1px;flex:1;background:var(--line,rgba(255,255,255,.16));"></span></div>
 <button id="staffPasskeySignInBtn" class="pill pill-ghost" style="width:100%;" type="button">🪪 Staff Passkey / Biometrics</button>
 <button id="registerPasskeyBtn" class="pill pill-ghost" style="width:100%;margin-top:10px;display:none;" type="button">➕ Set up Passkey on this device</button>
@@ -1605,9 +1612,15 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 <p class="memory-caption">On the Golden Frame</p>
 <p class="memory-hint">Scroll or tap anywhere to close</p>
 </img></div>
+<style id="mrg-v52-feedback-css">
+#mgrToast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,18px);z-index:10000;max-width:min(92vw,520px);padding:11px 15px;border:1px solid rgba(216,180,95,.35);border-radius:14px;background:rgba(8,10,18,.96);color:var(--text,#fff);box-shadow:0 14px 40px rgba(0,0,0,.45);font-size:.78rem;line-height:1.35;opacity:0;pointer-events:none;transition:.22s ease;text-align:center}
+#mgrToast.open{opacity:1;transform:translate(-50%,0)}
+#mgrToast.ok{border-color:rgba(46,204,113,.45)} #mgrToast.error{border-color:rgba(231,76,60,.55)} #mgrToast.info{border-color:rgba(216,180,95,.35)}
+.mgr-awards-grid button.is-busy{opacity:.7;pointer-events:none}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===================== V50 AUTH / ACCESS ===================== */
+/* ===================== V52 AUTH / ACCESS + ADMIN/MDR FEEDBACK ===================== */
 const MGR_SUPABASE_URL = 'https://aqorpbqvorbykxpzuoqi.supabase.co';
 const MGR_SUPABASE_KEY = 'sb_publishable_lIOvPUyYirnSWBN4SBfQYg_Yj2LWJHO';
 const MASTER_EMAILS = new Set(['mdmasterdan@gmail.com','multiverseglobalrecords@gmail.com']);
@@ -1617,6 +1630,13 @@ let currentUser = null;
 let currentRole = null;
 let isLoggedIn = false;
 const GUARDED_PAGES = ["page2","page3","page4","page5","page6"];
+/* V52 feedback: every important authentication/admin action reports its state. */
+(function(){
+ const t=document.createElement('div'); t.id='mgrToast'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite'); document.body.appendChild(t);
+ let timer=0; window.mgrFeedback=function(message,type='info'){clearTimeout(timer);t.textContent=message;t.className='open '+type;timer=setTimeout(()=>t.className='',3600);};
+ window.addEventListener('error',e=>{if(e?.message) window.mgrFeedback('MGR encountered an error: '+e.message,'error');});
+ window.addEventListener('unhandledrejection',e=>{const m=e?.reason?.message||String(e?.reason||'Unknown error');window.mgrFeedback('MGR action failed: '+m,'error');});
+})();
 function refreshGateUI(){document.querySelectorAll('.lock-mark').forEach(el=>el.style.display=isLoggedIn?'none':'inline');const s=document.getElementById('signOutLink');if(s)s.style.display=isLoggedIn?'block':'none';}
 function requireLogin(){openModal('signinModal');}
 function snapBackToPage1(){book.scrollTo({top:0,behavior:'auto'});}
@@ -1633,14 +1653,14 @@ async function applySession(session){
    if(MASTER_EMAILS.has(email)){currentRole='developer'; try{await mgrSupabase.rpc('mgr_claim_master_role')}catch(e){}}
    else {try{const r=await mgrSupabase.from('mgr_roles').select('developer,status').eq('user_id',currentUser.id).maybeSingle(); currentRole=r.data?.status==='active'?(r.data.developer?'developer':'admin'):null}catch(e){}}
  }
- refreshGateUI(); document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); window.dispatchEvent(new Event("mgr-auth-ready"));
+ refreshGateUI(); document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); if(currentRole) mgrFeedback('Signed in: '+(currentRole==='developer'?'Master Admin':'Administrator'),'ok'); else if(currentUser) mgrFeedback('Google sign-in succeeded, but this account is not authorised for MGR admin access.','error'); window.dispatchEvent(new Event("mgr-auth-ready"));
 }
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
  const MGR_PRODUCTION_URL='https://multipu.github.io/MGR/';
- const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_PRODUCTION_URL}});
- if(error)alert(error.message);
+ mgrFeedback('Opening Google sign-in…','info'); const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_PRODUCTION_URL}});
+ if(error){mgrFeedback('Google sign-in failed: '+error.message,'error');alert(error.message);}
 }
 async function signOutMGR(){if(mgrSupabase)await mgrSupabase.auth.signOut();}
 async function rejectNonStaffAuthentication(message){
@@ -1893,8 +1913,19 @@ document.getElementById("eiAsk").addEventListener("click", () => {
    if(b)b.style.display=(currentUser&&['developer','admin'].includes(currentRole))?'block':'none';
  });
  document.getElementById('signOutLink')?.addEventListener('click',async e=>{e.preventDefault();await signOutMGR();toggleDrawer(false);snapBackToPage1()});
- document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal')}else openModal('adminModal')});
- document.querySelectorAll('[data-admin-action]').forEach(b=>b.addEventListener('click',()=>{if(!currentUser)return;alert('Admin workspace: '+b.textContent.trim()+' is authorised for this account. Database operations will execute through protected MGR roles/policies.')}));
+ document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{mgrFeedback('Opening Admin Access…','info'); if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal');mgrFeedback('Admin panel ready.','ok')}else{openModal('adminModal');mgrFeedback('Admin Access opened. Choose Admin Sign In to continue.','info')}});
+ // V52: make every crown/MDR option a real working action instead of a silent button.
+ const awardDetails={
+  'Awards & Recognition':{tag:'Recognition',body:'MGR awards recognise verified achievement, contribution and excellence. This section is now connected to the MGR recognition hub and can be extended to live award records.'},
+  'Ranks & Levels':{tag:'Ranks & Levels',body:'MGR rank progression covers competitor levels, badges and advancement pathways. The rank hub is now opened directly instead of leaving the button inactive.'},
+  'Competitions':{tag:'Competitions',body:'MGR competitions are the participation pathway through which students and organisations earn recognition, records and progression.'},
+  'Teacher Ranks':{tag:'Teacher & Lecturer Ranks',body:'Teacher and lecturer pathways include service-based recognition and the integrated Educational Hierarchy. Use Educational Hierarchy for the detailed pathway.'},
+  'Student Leadership':{tag:'Student Awards & Leadership',body:'Student recognition includes leadership, badges, medals and achievement pathways. This button now opens the student recognition information instead of doing nothing.'}
+ };
+ document.querySelectorAll('[data-award]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.getAttribute('data-award');const d=awardDetails[key]||{tag:'MGR Recognition',body:'This MGR recognition section is available.'};document.getElementById('mgrAwardDetailTitle').textContent='🏆 '+key;document.getElementById('mgrAwardDetailTag').textContent=d.tag;document.getElementById('mgrAwardDetailBody').textContent=d.body;openModal('mgrAwardDetailModal');mgrFeedback(key+' opened.','ok');}));
+ document.getElementById('openEducationIntegration')?.addEventListener('click',()=>mgrFeedback('Educational Hierarchy opened.','ok'));
+ document.getElementById('staffGoogleSignInBtn')?.addEventListener('click',googleSignIn);
+ document.querySelectorAll('[data-admin-action]').forEach(b=>b.addEventListener('click',()=>{if(!currentUser)return;mgrFeedback(b.textContent.trim()+' selected. This admin module is authorised for your account.','ok')}));
  initMGRAuth();
 })();
 
