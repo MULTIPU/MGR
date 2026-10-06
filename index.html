@@ -1527,7 +1527,9 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 <h2>Sign In</h2>
 <p class="modal-tag">MGR uses Google Sign-In for general accounts.</p>
 <button class="pill pill-gold" id="googleSignInBtn" style="width:100%;margin-top:10px;" type="button">🔐 Sign in with Google</button>
-<p class="modal-note" id="authStatus">You will return to MGR after Google authentication.</p>
+<button class="pill pill-ghost" id="passkeySignInBtn" style="width:100%;margin-top:10px;" type="button">🪪 Sign in with Passkey / Biometrics</button>
+<button class="pill pill-ghost" id="registerPasskeyBtn" style="width:100%;margin-top:10px;display:none;" type="button">➕ Set up Passkey on this device</button>
+<p class="modal-note" id="authStatus">Use Google or a registered passkey. MGR does not require a password for this sign-in screen.</p>
 </div>
 <div class="modal" id="joinModal">
 <button class="modal-close" data-close="" type="button">×</button>
@@ -1618,7 +1620,7 @@ function requireLogin(){openModal('signinModal');}
 function snapBackToPage1(){book.scrollTo({top:0,behavior:'auto'});}
 async function initMGRAuth(){
  if(!window.supabase?.createClient)return;
- mgrSupabase=window.supabase.createClient(MGR_SUPABASE_URL,MGR_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ mgrSupabase=window.supabase.createClient(MGR_SUPABASE_URL,MGR_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},experimental:{passkey:true}});
  const {data:{session}}=await mgrSupabase.auth.getSession(); await applySession(session);
  mgrSupabase.auth.onAuthStateChange((_e,session)=>{setTimeout(()=>applySession(session),0)});
 }
@@ -1634,10 +1636,30 @@ async function applySession(session){
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
- const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href.split('#')[0]}});
+ const MGR_PRODUCTION_URL='https://mgr.multiverseglobalrecords.workers.dev/';
+ const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_PRODUCTION_URL}});
  if(error)alert(error.message);
 }
 async function signOutMGR(){if(mgrSupabase)await mgrSupabase.auth.signOut();}
+async function passkeySignIn(){
+ if(!mgrSupabase){await initMGRAuth();}
+ if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
+ const {data,error}=await mgrSupabase.auth.signInWithPasskey();
+ if(error){
+   const status=document.getElementById('authStatus');
+   if(status)status.textContent='Passkey sign-in was not completed: '+error.message;
+   return;
+ }
+ if(data?.user)applySession(data.session);
+}
+async function registerMGRPasskey(){
+ if(!mgrSupabase||!currentUser){return;}
+ const {data,error}=await mgrSupabase.auth.registerPasskey();
+ const status=document.getElementById('authStatus');
+ if(error){if(status)status.textContent='Passkey setup was not completed: '+error.message;return;}
+ if(status)status.textContent='Passkey registered successfully on this device. You can use biometrics, PIN or your device passkey next time.';
+ if(data)document.getElementById('registerPasskeyBtn')?.style.setProperty('display','none');
+}
 
 /* ===================== LOADER ===================== */
 window.addEventListener("load", () => {
@@ -1829,6 +1851,12 @@ document.getElementById("eiAsk").addEventListener("click", () => {
  if(bookEl){bookEl.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(update)}},{passive:true});['touchstart','wheel'].forEach(ev=>bookEl.addEventListener(ev,()=>nav?.classList.remove('mgr-nav-hidden'),{passive:true}));}
  // Google-only auth controls.
  document.getElementById('googleSignInBtn')?.addEventListener('click',googleSignIn);
+ document.getElementById('passkeySignInBtn')?.addEventListener('click',passkeySignIn);
+ document.getElementById('registerPasskeyBtn')?.addEventListener('click',registerMGRPasskey);
+ window.addEventListener('mgr-auth-ready',()=>{
+   const b=document.getElementById('registerPasskeyBtn');
+   if(b)b.style.display=currentUser?'block':'none';
+ });
  document.getElementById('signOutLink')?.addEventListener('click',async e=>{e.preventDefault();await signOutMGR();toggleDrawer(false);snapBackToPage1()});
  document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal')}else openModal('signinModal')});
  document.querySelectorAll('[data-admin-action]').forEach(b=>b.addEventListener('click',()=>{if(!currentUser)return;alert('Admin workspace: '+b.textContent.trim()+' is authorised for this account. Database operations will execute through protected MGR roles/policies.')}));
