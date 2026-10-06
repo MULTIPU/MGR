@@ -1633,7 +1633,7 @@ async function applySession(session){
    if(MASTER_EMAILS.has(email)){currentRole='developer'; try{await mgrSupabase.rpc('mgr_claim_master_role')}catch(e){}}
    else {try{const r=await mgrSupabase.from('mgr_roles').select('developer,status').eq('user_id',currentUser.id).maybeSingle(); currentRole=r.data?.status==='active'?(r.data.developer?'developer':'admin'):null}catch(e){}}
  }
- refreshGateUI(); if(currentRole) document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); else document.getElementById("adminKeyBtn")?.style.setProperty("display","none"); window.dispatchEvent(new Event("mgr-auth-ready"));
+ refreshGateUI(); document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); window.dispatchEvent(new Event("mgr-auth-ready"));
 }
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
@@ -1778,8 +1778,7 @@ const hamburgerBtn = document.getElementById("hamburgerBtn");
 const navDrawer = document.getElementById("navDrawer");
 const scrim = document.getElementById("scrim");
 const adminKeyBtn = document.getElementById("adminKeyBtn");
-adminKeyBtn.style.display = "none";
-window.addEventListener("mgr-auth-ready",()=>{if(currentRole) adminKeyBtn.style.display="flex";});
+adminKeyBtn.style.display = "flex";
 
 function toggleDrawer(open){
   navDrawer.classList.toggle("open", open);
@@ -1894,7 +1893,7 @@ document.getElementById("eiAsk").addEventListener("click", () => {
    if(b)b.style.display=(currentUser&&['developer','admin'].includes(currentRole))?'block':'none';
  });
  document.getElementById('signOutLink')?.addEventListener('click',async e=>{e.preventDefault();await signOutMGR();toggleDrawer(false);snapBackToPage1()});
- document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal')}else openModal('signinModal')});
+ document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal')}else openModal('adminModal')});
  document.querySelectorAll('[data-admin-action]').forEach(b=>b.addEventListener('click',()=>{if(!currentUser)return;alert('Admin workspace: '+b.textContent.trim()+' is authorised for this account. Database operations will execute through protected MGR roles/policies.')}));
  initMGRAuth();
 })();
