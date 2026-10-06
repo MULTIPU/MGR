@@ -1527,9 +1527,7 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 <h2>Sign In</h2>
 <p class="modal-tag">MGR uses Google Sign-In for general accounts.</p>
 <button class="pill pill-gold" id="googleSignInBtn" style="width:100%;margin-top:10px;" type="button">🔐 Sign in with Google</button>
-<button class="pill pill-ghost" id="passkeySignInBtn" style="width:100%;margin-top:10px;" type="button">🪪 Sign in with Passkey / Biometrics</button>
-<button class="pill pill-ghost" id="registerPasskeyBtn" style="width:100%;margin-top:10px;display:none;" type="button">➕ Set up Passkey on this device</button>
-<p class="modal-note" id="authStatus">Use Google or a registered passkey. MGR does not require a password for this sign-in screen.</p>
+<p class="modal-note" id="authStatus">General MGR accounts use Google Sign-In. Staff authentication is handled separately through Admin Access.</p>
 </div>
 <div class="modal" id="joinModal">
 <button class="modal-close" data-close="" type="button">×</button>
@@ -1557,9 +1555,13 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 </button>
 </div>
 <form class="stub-form admin-sub-view" id="adminLoginForm" onsubmit="return false;">
-<input placeholder="Admin email address" type="email"/>
-<input placeholder="Password" type="password"/>
-<button type="submit">Sign in as Admin</button>
+<input id="staffEmailInput" autocomplete="username" placeholder="Staff email address" type="email"/>
+<input id="staffPasswordInput" autocomplete="current-password" placeholder="Staff password" type="password"/>
+<button id="staffPasswordSignInBtn" type="submit">🔐 Sign in with Staff Password</button>
+<div style="display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--muted);font-size:.72rem;"><span style="height:1px;flex:1;background:var(--line,rgba(255,255,255,.16));"></span><span>OR</span><span style="height:1px;flex:1;background:var(--line,rgba(255,255,255,.16));"></span></div>
+<button id="staffPasskeySignInBtn" class="pill pill-ghost" style="width:100%;" type="button">🪪 Staff Passkey / Biometrics</button>
+<button id="registerPasskeyBtn" class="pill pill-ghost" style="width:100%;margin-top:10px;display:none;" type="button">➕ Set up Passkey on this device</button>
+<p class="modal-note" id="staffAuthStatus">Staff credentials are restricted to verified MGR staff accounts.</p>
 </form>
 <form class="stub-form admin-sub-view" id="adminRequestForm" onsubmit="return false;">
 <input placeholder="Full name" type="text"/>
@@ -1605,7 +1607,7 @@ body.light-mode #mrgMultiverseOverlay .mrg-v15-card{background:#f4f0e7!important
 </img></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===================== V43 AUTH / ACCESS ===================== */
+/* ===================== V50 AUTH / ACCESS ===================== */
 const MGR_SUPABASE_URL = 'https://aqorpbqvorbykxpzuoqi.supabase.co';
 const MGR_SUPABASE_KEY = 'sb_publishable_lIOvPUyYirnSWBN4SBfQYg_Yj2LWJHO';
 const MASTER_EMAILS = new Set(['mdmasterdan@gmail.com','multiverseglobalrecords@gmail.com']);
@@ -1636,26 +1638,59 @@ async function applySession(session){
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
- const MGR_PRODUCTION_URL='https://mgr.multiverseglobalrecords.workers.dev/';
+ const MGR_PRODUCTION_URL='https://multipu.github.io/MGR/';
  const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_PRODUCTION_URL}});
  if(error)alert(error.message);
 }
 async function signOutMGR(){if(mgrSupabase)await mgrSupabase.auth.signOut();}
+async function rejectNonStaffAuthentication(message){
+  await signOutMGR();
+  currentUser=null; currentRole=null; isLoggedIn=false; refreshGateUI();
+  const status=document.getElementById('staffAuthStatus');
+  if(status)status.textContent=message;
+  alert(message);
+}
 async function passkeySignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
  const {data,error}=await mgrSupabase.auth.signInWithPasskey();
  if(error){
-   const status=document.getElementById('authStatus');
-   if(status)status.textContent='Passkey sign-in was not completed: '+error.message;
+   const status=document.getElementById('staffAuthStatus');
+   if(status)status.textContent='Staff passkey sign-in was not completed: '+error.message;
    return;
  }
- if(data?.user)applySession(data.session);
+ if(data?.session){
+   await applySession(data.session);
+   if(!['developer','admin'].includes(currentRole)){
+     await rejectNonStaffAuthentication('This passkey is not authorised for MGR staff access.');
+     return;
+   }
+   const status=document.getElementById('staffAuthStatus');
+   if(status)status.textContent='Staff passkey verified. Your authorised MGR staff access is active.';
+   document.getElementById('registerPasskeyBtn')?.style.setProperty('display','none');
+ }
+}
+async function staffPasswordSignIn(){
+ if(!mgrSupabase){await initMGRAuth();}
+ if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
+ const email=document.getElementById('staffEmailInput')?.value.trim();
+ const password=document.getElementById('staffPasswordInput')?.value;
+ const status=document.getElementById('staffAuthStatus');
+ if(!email||!password){if(status)status.textContent='Enter the staff email address and password.';return;}
+ const {data,error}=await mgrSupabase.auth.signInWithPassword({email,password});
+ if(error){if(status)status.textContent='Staff password sign-in failed: '+error.message;return;}
+ await applySession(data.session);
+ if(!['developer','admin'].includes(currentRole)){
+   await rejectNonStaffAuthentication('This account is not authorised for MGR staff access.');
+   return;
+ }
+ if(status)status.textContent='Staff password verified. Your authorised MGR staff access is active.';
+ document.getElementById('registerPasskeyBtn')?.style.setProperty('display','block');
 }
 async function registerMGRPasskey(){
- if(!mgrSupabase||!currentUser){return;}
+ if(!mgrSupabase||!currentUser||!['developer','admin'].includes(currentRole)){return;}
  const {data,error}=await mgrSupabase.auth.registerPasskey();
- const status=document.getElementById('authStatus');
+ const status=document.getElementById('staffAuthStatus');
  if(error){if(status)status.textContent='Passkey setup was not completed: '+error.message;return;}
  if(status)status.textContent='Passkey registered successfully on this device. You can use biometrics, PIN or your device passkey next time.';
  if(data)document.getElementById('registerPasskeyBtn')?.style.setProperty('display','none');
@@ -1849,13 +1884,14 @@ document.getElementById("eiAsk").addEventListener("click", () => {
  const nav=document.querySelector('.bottom-nav'); const bookEl=document.getElementById('book'); let last=bookEl?.scrollTop||0; let ticking=false;
  function update(){if(!nav||!bookEl)return;const y=bookEl.scrollTop||0;const dy=y-last;if(Math.abs(dy)>3){if(y<=10||dy<0)nav.classList.remove('mgr-nav-hidden');else if(dy>0&&y>30)nav.classList.add('mgr-nav-hidden');last=y}ticking=false}
  if(bookEl){bookEl.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(update)}},{passive:true});['touchstart','wheel'].forEach(ev=>bookEl.addEventListener(ev,()=>nav?.classList.remove('mgr-nav-hidden'),{passive:true}));}
- // Google-only auth controls.
+ // Role-separated authentication controls: Google for general users; password/passkey for verified staff.
  document.getElementById('googleSignInBtn')?.addEventListener('click',googleSignIn);
- document.getElementById('passkeySignInBtn')?.addEventListener('click',passkeySignIn);
+ document.getElementById('staffPasswordSignInBtn')?.addEventListener('click',e=>{e.preventDefault();staffPasswordSignIn()});
+ document.getElementById('staffPasskeySignInBtn')?.addEventListener('click',passkeySignIn);
  document.getElementById('registerPasskeyBtn')?.addEventListener('click',registerMGRPasskey);
  window.addEventListener('mgr-auth-ready',()=>{
    const b=document.getElementById('registerPasskeyBtn');
-   if(b)b.style.display=currentUser?'block':'none';
+   if(b)b.style.display=(currentUser&&['developer','admin'].includes(currentRole))?'block':'none';
  });
  document.getElementById('signOutLink')?.addEventListener('click',async e=>{e.preventDefault();await signOutMGR();toggleDrawer(false);snapBackToPage1()});
  document.getElementById('adminKeyBtn')?.addEventListener('click',async()=>{if(currentUser&&(['developer','admin'].includes(currentRole))){document.getElementById('adminPanelIdentity').textContent=`Authorised: ${currentUser.email} · ${currentRole==='developer'?'Master Admin':'Administrator'}`;openModal('adminPanelModal')}else openModal('signinModal')});
