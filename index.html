@@ -8,6 +8,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <meta content="#07050f" name="theme-color"/>
+<!-- MGR V58 authentication/profile integration -->
 <title>Multiverse Global Records — MGR</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;family=Dancing+Script:wght@600;700&amp;display=swap" rel="stylesheet"/>
@@ -991,6 +992,7 @@ body.light-mode .mrg-v57-billboard{background:linear-gradient(145deg,#f8f6ef,#dc
 @media(max-width:650px){.mrg-v57-billboard-wrap{margin-top:12px}.mrg-v57-billboard{width:min(94vw,500px);padding:7px;border-radius:14px}.mrg-v57-overlay{left:9px;right:9px;bottom:9px}.mrg-v57-caption{font-size:.88rem}.mrg-v57-pole{height:68px;width:15px}.mrg-v57-pole:before,.mrg-v57-pole:after{width:74px;height:10px;bottom:-13px}.mrg-v57-adpanel{width:min(94vw,500px)}}
 </style>
 
+<style id="mrg-v58-profile-css">.mrg-profile-head{display:flex;align-items:center;gap:13px;margin-bottom:14px}.mrg-profile-avatar{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(216,180,95,.25),rgba(70,58,130,.35));border:1px solid rgba(216,180,95,.35);color:var(--gold-2);font-size:1.45rem;font-weight:900}.mrg-profile-card,.mrg-profile-section{padding:13px;border:1px solid var(--glass-border);border-radius:15px;background:rgba(255,255,255,.035);margin-top:10px}.mrg-profile-card label{display:flex;flex-direction:column;gap:5px;font-size:.7rem;color:var(--muted);margin-bottom:10px}.mrg-profile-card input{width:100%;box-sizing:border-box;padding:10px 11px;border-radius:10px;border:1px solid var(--glass-border);background:var(--navy-2);color:var(--text);font:inherit;outline:none}.mrg-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}.mrg-profile-grid>div{padding:10px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.mrg-profile-grid small{display:block;color:var(--muted);font-size:.62rem}.mrg-profile-grid strong{display:block;margin-top:3px;color:var(--gold-2);font-size:.78rem}.mrg-profile-section h3{margin:0;color:var(--gold-2);font-family:'Cormorant Garamond',serif;font-size:1.05rem}.mrg-promotion-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mrg-promotion-status{margin-top:10px;font-size:.7rem;color:var(--muted)}.mrg-promotion-status .mrg-app-row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}.mrg-profile-account-actions{display:flex;justify-content:flex-end}@media(max-width:520px){.mrg-profile-grid,.mrg-promotion-actions{grid-template-columns:1fr}}</style>
 </head>
 <body>
 <!-- V29 RANKING BADGES MEDALS + V25 EXTRACTED MULTIVERSE CALENDAR PAYLOAD -->
@@ -1450,6 +1452,9 @@ body.light-mode .mrg-v57-billboard{background:linear-gradient(145deg,#f8f6ef,#dc
 <button class="mrg-v23-post-option" data-post-type="video" type="button"><span class="ico">🎬</span>Video</button>
 <button class="mrg-v23-post-option" data-post-type="image" type="button"><span class="ico">📷</span>Image / Photo</button>
 </div>
+<!-- V58 — Unified user/staff/admin profile -->
+<div class="modal" id="mrgProfileModal" aria-hidden="true"><button class="modal-close" data-close="" type="button" aria-label="Close profile">×</button><div class="mrg-profile-head"><div class="mrg-profile-avatar" id="mrgProfileAvatar">M</div><div><h2 id="mrgProfileHeading">My MGR Profile</h2><p class="modal-tag" id="mrgProfileRoleLabel">MGR User Profile</p></div></div><div class="mrg-profile-card"><label>Display name<input id="mrgProfileName" type="text" maxlength="80" autocomplete="name"></label><label>Email<input id="mrgProfileEmail" type="email" readonly></label><div class="mrg-profile-grid"><div><small>Account type</small><strong id="mrgProfileAccountType">User</strong></div><div><small>Access role</small><strong id="mrgProfileAccessRole">User</strong></div></div><button class="pill pill-gold" id="mrgProfileSave" type="button">Save profile</button><p class="modal-note" id="mrgProfileStatus" aria-live="polite"></p></div><div class="mrg-profile-section"><h3>Request promotion</h3><p class="modal-note">Request MGR staff or administrator status from your profile. Approval is handled separately by authorised MGR management.</p><div class="mrg-promotion-actions"><button class="pill pill-ghost" data-mrg-promotion="staff" type="button">Request Staff</button><button class="pill pill-gold" data-mrg-promotion="admin" type="button">Request Admin</button></div><div id="mrgPromotionStatus" class="mrg-promotion-status"></div></div><div class="mrg-profile-section mrg-profile-account-actions"><button class="pill pill-ghost" id="mrgProfileSignOut" type="button">🚪 Sign Out</button></div></div>
+
 <!-- ============ MODALS ============ -->
 <div class="modal-scrim" id="modalScrim"></div>
 <div class="modal" id="aboutModal">
@@ -1683,7 +1688,11 @@ const GUARDED_PAGES = ["page2","page3","page4","page5","page6"];
  window.addEventListener('error',e=>{if(e?.message) window.mgrFeedback('MGR encountered an error: '+e.message,'error');});
  window.addEventListener('unhandledrejection',e=>{const m=e?.reason?.message||String(e?.reason||'Unknown error');window.mgrFeedback('MGR action failed: '+m,'error');});
 })();
-function refreshGateUI(){document.querySelectorAll('.lock-mark').forEach(el=>el.style.display=isLoggedIn?'none':'inline');const s=document.getElementById('signOutLink');if(s)s.style.display=isLoggedIn?'block':'none';}
+function refreshGateUI(){document.querySelectorAll('.lock-mark').forEach(el=>el.style.display=isLoggedIn?'none':'inline');const s=document.getElementById('signOutLink');if(s)s.style.display=isLoggedIn?'block':'none';const p=document.getElementById('bnProfile');if(p)p.setAttribute('aria-label',isLoggedIn?'Open your MGR profile':'Sign in to open your MGR profile');}
+async function ensureMGRProfile(){if(!mgrSupabase||!currentUser)return null;const fallback=(currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||currentUser.email?.split('@')[0]||'MGR User').trim();const {data,error}=await mgrSupabase.from('mgr_profiles').upsert({user_id:currentUser.id,display_name:fallback},{onConflict:'user_id'}).select('user_id,display_name,preferred_language,onboarding_complete,account_type,created_at,updated_at').maybeSingle();if(error)throw error;return data;}
+async function loadMGRProfile(){if(!isLoggedIn){requireLogin();return;}const status=document.getElementById('mrgProfileStatus');openModal('mrgProfileModal');if(status)status.textContent='Loading profile…';try{const profile=await ensureMGRProfile();const {data:role}=await mgrSupabase.from('mgr_roles').select('developer,status,title').eq('user_id',currentUser.id).maybeSingle();const {data:apps,error:appError}=await mgrSupabase.from('mgr_admin_applications').select('id,requested_role,employment_type,status,notes,created_at').eq('applicant_user_id',currentUser.id).order('created_at',{ascending:false}).limit(5);if(appError)throw appError;const display=profile?.display_name||currentUser.user_metadata?.full_name||currentUser.email||'MGR User';const roleValue=role?.status==='active'?(role.developer==='admin'?'Admin':role.developer==='developer'?'Developer':(role.developer==='staff'||role.developer==='subordinate_developer')?'Staff':'User'):'User';document.getElementById('mrgProfileName').value=display;document.getElementById('mrgProfileEmail').value=currentUser.email||'';document.getElementById('mrgProfileAccountType').textContent=String(profile?.account_type||'user').replace(/\b\w/g,c=>c.toUpperCase());document.getElementById('mrgProfileAccessRole').textContent=roleValue;document.getElementById('mrgProfileRoleLabel').textContent='MGR '+roleValue+' Profile';document.getElementById('mrgProfileHeading').textContent=(roleValue==='Admin'||roleValue==='Developer'||roleValue==='Staff')?'MGR '+roleValue+' Profile':'My MGR Profile';document.getElementById('mrgProfileAvatar').textContent=(display[0]||'M').toUpperCase();document.getElementById('mrgPromotionStatus').innerHTML=apps?.length?apps.map(a=>`<div class="mrg-app-row"><span>Request: <strong>${String(a.requested_role).toUpperCase()}</strong></span><span>${String(a.status).toUpperCase()}</span></div>`).join(''):'No promotion request submitted.';if(status)status.textContent='Profile connected to your MGR account.';}catch(e){if(status)status.textContent='Unable to load profile: '+(e?.message||e);mgrFeedback('Profile could not be loaded.','error');}}
+async function saveMGRProfile(){if(!isLoggedIn||!mgrSupabase)return requireLogin();const name=document.getElementById('mrgProfileName')?.value.trim();if(!name){mgrFeedback('Enter a display name first.','error');return;}try{const {error}=await mgrSupabase.from('mgr_profiles').upsert({user_id:currentUser.id,display_name:name,onboarding_complete:true},{onConflict:'user_id'});if(error)throw error;document.getElementById('mrgProfileStatus').textContent='Profile saved.';mgrFeedback('Profile saved.','ok');}catch(e){mgrFeedback('Profile save failed: '+(e?.message||e),'error');}}
+async function requestMGRPromotion(requestedRole){if(!isLoggedIn||!mgrSupabase)return requireLogin();if(!['staff','admin'].includes(requestedRole))return;try{const {data:role}=await mgrSupabase.from('mgr_roles').select('developer,status').eq('user_id',currentUser.id).maybeSingle();if(role?.status==='active'&&['staff','admin','developer','subordinate_developer'].includes(role.developer)){mgrFeedback('Your account already has elevated MGR access.','info');return;}const {data:pending}=await mgrSupabase.from('mgr_admin_applications').select('id').eq('applicant_user_id',currentUser.id).eq('status','pending').maybeSingle();if(pending){mgrFeedback('You already have a pending promotion request.','info');await loadMGRProfile();return;}const {error}=await mgrSupabase.from('mgr_admin_applications').insert({applicant_user_id:currentUser.id,requested_role:requestedRole,employment_type:'volunteer',status:'pending'});if(error)throw error;mgrFeedback('Your '+requestedRole+' promotion request has been submitted.','ok');await loadMGRProfile();}catch(e){mgrFeedback('Promotion request failed: '+(e?.message||e),'error');}}
 function requireLogin(){openModal('signinModal');}
 function snapBackToPage1(){book.scrollTo({top:0,behavior:'auto'});}
 async function initMGRAuth(){
@@ -1697,10 +1706,10 @@ async function applySession(session){
  if(currentUser){
    const email=(currentUser.email||'').toLowerCase();
    if(MASTER_EMAILS.has(email)){currentRole='developer'; try{await mgrSupabase.rpc('mgr_claim_master_role')}catch(e){}}
-   else {try{const r=await mgrSupabase.from('mgr_roles').select('developer,status').eq('user_id',currentUser.id).maybeSingle(); currentRole=r.data?.status==='active'?(r.data.developer?'developer':'admin'):null}catch(e){}}
+   else {try{const r=await mgrSupabase.from('mgr_roles').select('developer,status,title').eq('user_id',currentUser.id).maybeSingle(); const role=r.data?.developer; currentRole=r.data?.status==='active'?(role==='developer'?'developer':role==='admin'?'admin':(role==='staff'||role==='subordinate_developer')?'staff':null):null}catch(e){}}
  }
- if(currentUser){ await completePendingRegistration(); }
- refreshGateUI(); document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); if(currentRole){ mgrFeedback('Signed in: '+(currentRole==='developer'?'Master Admin':'Administrator'),'ok'); } else if(currentUser) mgrFeedback('Google sign-in succeeded. This account is a normal MGR account, not an administrator.','info'); window.dispatchEvent(new Event("mgr-auth-ready"));
+ if(currentUser){ try{await ensureMGRProfile();}catch(e){mgrFeedback('MGR profile could not be synchronised: '+(e?.message||e),'error');} await completePendingRegistration(); }
+ refreshGateUI(); document.getElementById("adminKeyBtn")?.style.setProperty("display","flex"); if(currentRole){ mgrFeedback('Signed in: '+(currentRole==='developer'?'Master Admin':currentRole==='admin'?'Administrator':'MGR Staff'),'ok'); } else if(currentUser) mgrFeedback('Google sign-in succeeded. Your MGR user profile is active.','info'); window.dispatchEvent(new Event("mgr-auth-ready"));
 }
 async function completePendingRegistration(){
  const raw=localStorage.getItem('mgrPendingRegistration'); if(!raw||!currentUser||!mgrSupabase)return;
@@ -1735,8 +1744,8 @@ async function startRegistration(){
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
- const MGR_PRODUCTION_URL='https://multipu.github.io/MGR/';
- mgrFeedback('Opening Google sign-in…','info'); const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_PRODUCTION_URL}});
+ const MGR_AUTH_REDIRECT=(window.location.origin||'https://multipu.github.io/MGR').replace(/\/$/,'')+'/';
+ mgrFeedback('Opening Google sign-in…','info'); const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_AUTH_REDIRECT}});
  if(error){mgrFeedback('Google sign-in failed: '+error.message,'error');alert(error.message);}
 }
 async function signOutMGR(){if(mgrSupabase)await mgrSupabase.auth.signOut();}
@@ -2058,7 +2067,7 @@ document.getElementById("eiAsk").addEventListener("click", () => {
    closePop(); openRecognitionSoftware(target);
  }));
  document.getElementById('openEducationIntegration')?.addEventListener('click',()=>mgrFeedback('Educational Hierarchy opened.','ok'));
- initMGRAuth();
+ document.getElementById('mrgProfileSave')?.addEventListener('click',saveMGRProfile);document.getElementById('mrgProfileSignOut')?.addEventListener('click',async()=>{await signOutMGR();closeAllModals();mgrFeedback('You have been signed out.','info');});document.querySelectorAll('[data-mrg-promotion]').forEach(b=>b.addEventListener('click',()=>requestMGRPromotion(b.dataset.mrgPromotion)));initMGRAuth();
 })();
 
 /* ===================== COMMENTS + RATINGS (client-side store) ===================== */
@@ -2120,9 +2129,11 @@ function scrollToPage(id){
   if (GUARDED_PAGES.includes(id) && !isLoggedIn){ requireLogin(); return; }
   document.getElementById(id).scrollIntoView({behavior:"smooth"});
 }
-document.getElementById("bnComments").addEventListener("click", () => openModal("commentsModal"));
+document.getElementById("bnComments").addEventListener("click", () => isLoggedIn ? openModal("commentsModal") : requireLogin());
 /* V46: bnPost is handled by the dedicated V23 post composer controller below. */
-document.getElementById("bnProfile").addEventListener("click", () => openModal("signinModal"));
+document.getElementById("bnProfile").addEventListener("click", () => isLoggedIn ? loadMGRProfile() : requireLogin());
+
+document.getElementById('bnPost')?.addEventListener('click',e=>{if(!isLoggedIn){e.stopImmediatePropagation();e.preventDefault();requireLogin();}},true);document.querySelector('.bottom-nav [data-open="notifyDrop"]')?.addEventListener('click',e=>{if(!isLoggedIn){e.stopImmediatePropagation();e.preventDefault();requireLogin();}},true);
 
 /* Block scrolling past Page 1 for guests — snap back and prompt sign-in */
 let gateWatch = false;
