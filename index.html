@@ -1570,12 +1570,13 @@ body.light-mode .mrg-v57-billboard{background:linear-gradient(145deg,#f8f6ef,#dc
 <span class="reg-choice-title">Register as a Student</span>
 <span class="reg-choice-sub">Individual student account</span>
 </button>
-<button class="reg-choice" data-type="Educator" type="button">
-<span class="reg-choice-title">Register as a Teacher / Educator</span>
-<span class="reg-choice-sub">Teachers, lecturers and school staff</span>
+<button class="reg-choice" data-type="Others" type="button">
+<span class="reg-choice-title">Register as Others</span>
+<span class="reg-choice-sub">Teacher, coach, head coach, referee, sports officials and more</span>
 </button>
 </div>
 </div>
+<div class="reg-view" id="regOthers"><button class="reg-back" id="regOthersBack" type="button">← Back</button><h2>Others</h2><p class="modal-tag">Choose your position</p><div class="oth-wrap"><div class="oth-group"><h4>Education</h4><div class="oth-grid"><button class="oth-opt" data-role="Teacher" type="button">Teacher</button><button class="oth-opt" data-role="Lecturer / Educator" type="button">Lecturer / Educator</button><button class="oth-opt" data-role="Sports Master / Mistress" type="button">Sports Master / Mistress</button><button class="oth-opt" data-role="Games Master" type="button">Games Master</button></div></div><div class="oth-group"><h4>Coaching</h4><div class="oth-grid"><button class="oth-opt" data-role="Head Coach" type="button">Head Coach</button><button class="oth-opt" data-role="Assistant Coach" type="button">Assistant Coach</button><button class="oth-opt" data-role="Fitness / Strength Coach" type="button">Fitness / Strength Coach</button><button class="oth-opt" data-role="Goalkeeping Coach" type="button">Goalkeeping Coach</button><button class="oth-opt" data-role="Youth Coach" type="button">Youth Coach</button><button class="oth-opt" data-role="Technical Director" type="button">Technical Director</button><button class="oth-opt" data-role="Team Manager" type="button">Team Manager</button><button class="oth-opt" data-role="Trainer" type="button">Trainer</button></div></div><div class="oth-group"><h4>Match Officials</h4><div class="oth-grid"><button class="oth-opt" data-role="Referee" type="button">Referee</button><button class="oth-opt" data-role="Assistant Referee / Linesman" type="button">Assistant Referee / Linesman</button><button class="oth-opt" data-role="Fourth Official" type="button">Fourth Official</button><button class="oth-opt" data-role="Video Assistant Referee (VAR)" type="button">Video Assistant Referee (VAR)</button><button class="oth-opt" data-role="Umpire" type="button">Umpire</button><button class="oth-opt" data-role="Judge" type="button">Judge</button><button class="oth-opt" data-role="Timekeeper" type="button">Timekeeper</button><button class="oth-opt" data-role="Scorekeeper" type="button">Scorekeeper</button><button class="oth-opt" data-role="Starter" type="button">Starter</button><button class="oth-opt" data-role="Match Commissioner" type="button">Match Commissioner</button><button class="oth-opt" data-role="Race Official" type="button">Race Official</button><button class="oth-opt" data-role="Anti-Doping Officer" type="button">Anti-Doping Officer</button></div></div><div class="oth-group"><h4>Administration</h4><div class="oth-grid"><button class="oth-opt" data-role="Sports Director" type="button">Sports Director</button><button class="oth-opt" data-role="Athletics Director" type="button">Athletics Director</button><button class="oth-opt" data-role="Federation Official" type="button">Federation Official</button><button class="oth-opt" data-role="Association Chairman" type="button">Association Chairman</button><button class="oth-opt" data-role="Secretary" type="button">Secretary</button><button class="oth-opt" data-role="Treasurer" type="button">Treasurer</button><button class="oth-opt" data-role="Club Administrator" type="button">Club Administrator</button><button class="oth-opt" data-role="Event Organizer" type="button">Event Organizer</button><button class="oth-opt" data-role="Equipment Manager" type="button">Equipment Manager</button><button class="oth-opt" data-role="Groundskeeper" type="button">Groundskeeper</button></div></div><div class="oth-group"><h4>Support & Media</h4><div class="oth-grid"><button class="oth-opt" data-role="Physiotherapist" type="button">Physiotherapist</button><button class="oth-opt" data-role="Sports Doctor" type="button">Sports Doctor</button><button class="oth-opt" data-role="Sports Psychologist" type="button">Sports Psychologist</button><button class="oth-opt" data-role="Nutritionist" type="button">Nutritionist</button><button class="oth-opt" data-role="Talent Scout" type="button">Talent Scout</button><button class="oth-opt" data-role="Sports Analyst" type="button">Sports Analyst</button><button class="oth-opt" data-role="Sports Journalist" type="button">Sports Journalist</button><button class="oth-opt" data-role="Commentator" type="button">Commentator</button><button class="oth-opt" data-role="Player / Athlete" type="button">Player / Athlete</button><button class="oth-opt" data-role="Other sports role" type="button">Other sports role</button></div></div></div></div>
 <div class="reg-view" id="regForm">
 <button class="reg-back" id="regBack" type="button">← Back</button>
 <h2>Register</h2>
@@ -1719,18 +1720,19 @@ const GUARDED_PAGES = ["page2","page3","page4","page5","page6"];
 })();
 function refreshGateUI(){document.querySelectorAll('.lock-mark').forEach(el=>el.style.display=isLoggedIn?'none':'inline');const s=document.getElementById('signOutLink');if(s)s.style.display=isLoggedIn?'block':'none';const p=document.getElementById('bnProfile');if(p)p.setAttribute('aria-label','Open your MGR profile');}
 /* ===== V59 — universal MGR profile: guest, user, student, educator, school, organization/company, supporter, staff, admin ===== */
-const MGR_PROFILE_TYPES=[['User','Regular user'],['Student','Student'],['Educator','Teacher / Educator'],['School','School'],['Organization','Organization / Company'],['Supporter','Supporter']];
+const MGR_PROFILE_TYPES=[['User','Regular user'],['Student','Student'],['Educator','Teacher / Educator'],['School','School'],['Organization','Organization / Company'],['Supporter','Supporter'],['Sports','Sports professional / Others']];
 const MGR_PROFILE_FIELDS={
  User:[['phone','Phone (optional)','tel'],['location','Location (optional)','text']],
  Student:[['school','School','text'],['level','Class / level','text'],['location','Location (optional)','text']],
  Educator:[['school','School / institution','text'],['subject','Subject(s) taught','text'],['years','Years of service','number'],['location','Location (optional)','text']],
  School:[['schoolType','School type (primary, secondary, tertiary…)','text'],['location','Address / location','text'],['phone','Contact phone','tel'],['website','Website','url']],
  Organization:[['orgType','Organization type (company, NGO, community…)','text'],['location','Address / location','text'],['phone','Contact phone','tel'],['website','Website','url']],
- Supporter:[['phone','Phone (optional)','tel'],['location','Location (optional)','text']]
+ Supporter:[['phone','Phone (optional)','tel'],['location','Location (optional)','text']],
+ Sports:[['role','Sports position / role','text'],['organisation','Club / school / federation','text'],['location','Location (optional)','text']]
 };
 let mgrProfileCtx={type:'User',typeLocked:false,details:{}};
 function mgrEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function mgrNormType(t){const v=String(t||'').trim().toLowerCase();if(!v||v==='user'||v==='—')return 'User';if(/student|pupil/.test(v))return 'Student';if(/educ|teach|lectur/.test(v))return 'Educator';if(/school/.test(v))return 'School';if(/org|compan|business|ngo|community/.test(v))return 'Organization';if(/support/.test(v))return 'Supporter';return 'User';}
+function mgrNormType(t){const v=String(t||'').trim().toLowerCase();if(!v||v==='user'||v==='—')return 'User';if(/student|pupil/.test(v))return 'Student';if(/educ|teach|lectur/.test(v))return 'Educator';if(/coach|referee|umpire|judge|official|director|manager|trainer|timekeeper|scorekeeper|starter|commissioner|physio|doctor|psycholog|nutrition|scout|analyst|journalist|commentator|player|athlete|sport|games|federation|association|secretary|treasurer|administrator|organizer|equipment|groundskeeper|var\b|other/.test(v))return 'Sports';if(/school/.test(v))return 'School';if(/org|compan|business|ngo|community/.test(v))return 'Organization';if(/support/.test(v))return 'Supporter';return 'User';}
 function mgrTypeLabel(t){const f=MGR_PROFILE_TYPES.find(x=>x[0]===t);return f?f[1]:'Regular user';}
 function mgrProfileKey(){return 'mgrProfile:'+(currentUser&&currentUser.id?currentUser.id:'guest');}
 function mgrLocalProfile(){try{return JSON.parse(localStorage.getItem(mgrProfileKey())||'{}')||{};}catch(_){return {};}}
@@ -1886,6 +1888,7 @@ async function initMGRAuth(){
  mgrSupabase=window.supabase.createClient(MGR_SUPABASE_URL,MGR_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},experimental:{passkey:true}});
  const {data:{session}}=await mgrSupabase.auth.getSession(); await applySession(session);
  mgrSupabase.auth.onAuthStateChange((_e,session)=>{setTimeout(()=>applySession(session),0)});
+ if(location.hash.indexOf('access_token')>-1){setTimeout(()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}},1500)}
 }
 async function applySession(session){
  currentUser=session?.user||null; isLoggedIn=!!currentUser; currentRole=null;
@@ -1930,7 +1933,7 @@ async function startRegistration(){
 async function googleSignIn(){
  if(!mgrSupabase){await initMGRAuth();}
  if(!mgrSupabase){alert('Authentication service is unavailable. Please try again shortly.');return;}
- const MGR_AUTH_REDIRECT=(window.location.origin||'https://multipu.github.io/MGR').replace(/\/$/,'')+'/';
+ const MGR_AUTH_REDIRECT=window.location.origin+window.location.pathname.replace(/[^\/]*$/,'');
  mgrFeedback('Opening Google sign-in…','info'); const {error}=await mgrSupabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:MGR_AUTH_REDIRECT}});
  if(error){mgrFeedback('Google sign-in failed: '+error.message,'error');alert(error.message);}
 }
@@ -2066,8 +2069,17 @@ function closeAllModals(){
   document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));
   modalScrim.classList.remove("open");
 }
+function mgrShowRegForm(label){
+  document.getElementById("regTypeLabel").textContent = label;
+  document.getElementById("regName").placeholder = "Full name";
+  document.querySelectorAll("#registerModal .reg-view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("regForm").classList.add("active");
+}
+document.querySelectorAll(".oth-opt").forEach(b=>b.addEventListener("click",()=>mgrShowRegForm(b.dataset.role)));
+document.getElementById("regOthersBack")?.addEventListener("click",()=>{document.getElementById("regOthers").classList.remove("active");document.getElementById("regChoose").classList.add("active");});
 document.querySelectorAll(".reg-choice").forEach(btn=>{
   btn.addEventListener("click", ()=>{
+    if(btn.dataset.type==="Others"){document.getElementById("regChoose").classList.remove("active");document.getElementById("regOthers").classList.add("active");return;}
     document.getElementById("regTypeLabel").textContent = btn.dataset.type;
     document.getElementById("regName").placeholder =
       ["Student","Educator"].includes(btn.dataset.type) ? "Full name" : `${btn.dataset.type} name`;
@@ -3951,6 +3963,53 @@ ST.addEventListener('wheel',function(e){if(Math.abs(e.deltaX)>Math.abs(e.deltaY)
 addEventListener('keydown',function(e){if(!on)return;if(e.key=='ArrowRight'){tp=cl(tp+.04);hold=performance.now()+4000}else if(e.key=='ArrowLeft'){tp=cl(tp-.04);hold=performance.now()+4000}});
 window.mgrSeek=function(v){tp=v;p=v;hold=performance.now()+999999};var b=document.getElementById('jskip');if(b)b.addEventListener('click',home);
 }catch(e){console.warn('MGR journey',e)}})();
+</script>
+<style id="mgrFX">
+.oth-wrap{width:100%;max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-right:2px}
+.oth-group h4{font-family:'Cormorant Garamond',serif;color:var(--gold-2);font-size:.95rem;margin:0 0 6px}
+.oth-grid{display:flex;flex-wrap:wrap;gap:6px}
+.oth-opt{padding:8px 12px;border-radius:999px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-size:.76rem;cursor:pointer;transition:transform .25s,background .25s,box-shadow .25s}
+.oth-opt:hover,.oth-opt:active{transform:translateY(-2px) scale(1.04);background:rgba(216,180,95,.18);box-shadow:0 6px 18px rgba(138,79,224,.35)}
+#mgrFxCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+.modal.open{animation:fxModal .55s cubic-bezier(.2,.9,.25,1.1) both}
+.reg-view.active{animation:fxView .5s cubic-bezier(.2,.8,.2,1) both}
+.reg-choice,.pill-gold{position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s,border-color .3s}
+.reg-choice:hover,.pill-gold:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(138,79,224,.4),0 0 0 1px var(--gold)}
+.reg-choice::after,.pill-gold::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(243,217,140,.35),transparent);transform:skewX(-20deg);animation:fxShine 4.5s ease-in-out infinite}
+.reg-choice:nth-child(2)::after{animation-delay:.6s}.reg-choice:nth-child(3)::after{animation-delay:1.2s}.reg-choice:nth-child(4)::after{animation-delay:1.8s}
+.page.fx-in>*{animation:fxRise .9s cubic-bezier(.2,.8,.2,1) both}
+.fx-reveal{opacity:0;transform:translateY(26px) scale(.98);filter:blur(6px);transition:opacity .9s,transform .9s cubic-bezier(.2,.8,.2,1),filter .9s}
+.fx-reveal.show{opacity:1;transform:none;filter:none}
+@keyframes fxModal{from{opacity:0;transform:translate(-50%,-46%) scale(.92) rotateX(8deg);filter:blur(8px)}to{opacity:1;filter:none}}
+@keyframes fxView{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes fxShine{0%,60%{left:-70%}100%{left:130%}}
+@keyframes fxRise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#mgrFxCanvas{display:none}.modal.open,.reg-view.active,.reg-choice::after,.pill-gold::after{animation:none}.fx-reveal{opacity:1;transform:none;filter:none}}
+</style>
+<script id="mgrFXjs">
+(function(){try{
+if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+var c=document.createElement('canvas');c.id='mgrFxCanvas';document.body.insertBefore(c,document.body.firstChild);
+var x=c.getContext('2d'),W,H,D=Math.min(devicePixelRatio||1,2),N=70,P=[],m={x:-999,y:-999},run=true;
+function rs(){W=innerWidth;H=innerHeight;c.width=W*D;c.height=H*D;x.setTransform(D,0,0,D,0,0)}rs();addEventListener('resize',rs);
+for(var i=0;i<N;i++)P.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.8+.4,h:Math.random()<.5?43:268,ph:Math.random()*6.28});
+addEventListener('pointermove',function(e){m.x=e.clientX;m.y=e.clientY},{passive:true});
+document.addEventListener('visibilitychange',function(){run=!document.hidden;if(run)tick()});
+function tick(t){if(!run)return;t=(t||0)/1000;x.clearRect(0,0,W,H);
+ // slow aurora blobs
+ for(var k=0;k<3;k++){var ax=W*(.5+.4*Math.sin(t*.12+k*2)),ay=H*(.35+.3*Math.cos(t*.1+k*1.7)),g=x.createRadialGradient(ax,ay,0,ax,ay,Math.max(W,H)*.45);
+  g.addColorStop(0,k==1?'rgba(216,180,95,.10)':'rgba(138,79,224,.14)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H)}
+ for(var i=0;i<N;i++){var a=P[i];a.x+=a.vx;a.y+=a.vy;
+  var dx=a.x-m.x,dy=a.y-m.y,d=dx*dx+dy*dy;if(d<14000){var f=(14000-d)/14000*.6;a.x+=dx*f*.02;a.y+=dy*f*.02}
+  if(a.x<0)a.x=W;if(a.x>W)a.x=0;if(a.y<0)a.y=H;if(a.y>H)a.y=0;
+  x.fillStyle='hsla('+a.h+',80%,70%,'+(.45+.4*Math.sin(t*1.5+a.ph))+')';x.beginPath();x.arc(a.x,a.y,a.r,0,6.283);x.fill();
+  for(var j=i+1;j<N;j++){var b=P[j],ex=a.x-b.x,ey=a.y-b.y,q=ex*ex+ey*ey;if(q<9000){x.strokeStyle='rgba(216,180,95,'+(.16*(1-q/9000))+')';x.lineWidth=.6;x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()}}}
+ requestAnimationFrame(tick)}
+tick();
+// scroll-reveal for cards/tiles
+if(window.IntersectionObserver){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target)}})},{threshold:.12});
+ document.querySelectorAll('.mrg-market-tile,.reg-choice,.mrg-profile-card,[class*="card"],[class*="tile"]').forEach(function(el,i){if(el.closest('.modal'))return;el.classList.add('fx-reveal');el.style.transitionDelay=(i%6)*70+'ms';io.observe(el)})}
+}catch(e){console.warn('MGR FX',e)}})();
 </script>
 </body>
 </html>
